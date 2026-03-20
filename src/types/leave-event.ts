@@ -1,3 +1,4 @@
+
 export type LeaveEventResponse = {
   id: string;
   startDate: string;
