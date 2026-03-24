@@ -4,6 +4,7 @@ export type LeaveEventResponse = {
   startDate: string;
   endDate: string;
   status: string;
+  note: string;
   user: {
     name: string;
     email: string;
