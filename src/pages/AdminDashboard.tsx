@@ -21,6 +21,7 @@ type User = {
   name: string;
   surname: string;
   email: string;
+  remainingDays: number;
 };
 
 type LeaveEventResponse = {
@@ -59,8 +60,18 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState('');
 
-  /* ================= ADMIN NAME ================= */
+  /* === BALANCE MODAL === */
+  const [balanceModalOpen, setBalanceModalOpen] = useState(false);
+  const [balanceUserId, setBalanceUserId] = useState<string | null>(null);
+  const [newBalance, setNewBalance] = useState<number>(0);
+  const [balanceYear, setBalanceYear] = useState<number>(new Date().getFullYear());
 
+  /* === REJECT MODAL === */
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectLeaveId, setRejectLeaveId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+
+  /* ================= ADMIN NAME ================= */
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -73,7 +84,6 @@ export default function AdminDashboard() {
   }, []);
 
   /* ================= FETCH EVENTS ================= */
-
   const fetchEvents = async () => {
     const data: LeaveEventResponse[] = await api.getLeaveEvents();
     setEvents(data);
@@ -92,7 +102,6 @@ export default function AdminDashboard() {
   };
 
   /* ================= FETCH USERS ================= */
-
   const fetchUsers = async () => {
     const data = await api.getUsers();
     setUsers(data);
@@ -104,15 +113,46 @@ export default function AdminDashboard() {
   }, []);
 
   /* ================= ACTIONS ================= */
-
   const approve = async (id: string) => {
     await api.approveLeave(id);
     fetchEvents();
   };
 
-  const reject = async (id: string) => {
-    await api.rejectLeave(id);
+  const openRejectModal = (id: string) => {
+    setRejectLeaveId(id);
+    setRejectModalOpen(true);
+  };
+
+  const rejectWithReason = async () => {
+    if (!rejectLeaveId) return;
+    await api.rejectLeave(rejectLeaveId, rejectReason);
+    alert('Razlog odbijanja je poslat korisniku!');
     fetchEvents();
+    setRejectModalOpen(false);
+    setRejectReason('');
+  };
+
+  const addBalance = async () => {
+    if (!balanceUserId || newBalance <= 0) {
+      alert('Unesite broj dana za balans');
+      return;
+    }
+
+    try {
+      await api.updateUserBalance(balanceUserId, newBalance, balanceYear);
+      await fetchUsers(); // osvežava listu korisnika sa novim balansima
+
+      // Reset modal i input polja
+      setBalanceModalOpen(false);
+      setNewBalance(0);
+      setBalanceYear(new Date().getFullYear());
+      setBalanceUserId(null);
+
+      alert('Balans uspešno dodat!');
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Greška prilikom dodavanja balansa.');
+    }
   };
 
   const logout = () => {
@@ -123,7 +163,6 @@ export default function AdminDashboard() {
   const pendingEvents = events.filter(e => e.status === 'PENDING');
 
   /* ================= CALENDAR STYLES ================= */
-
   const eventStyleGetter = (event: CalendarEvent) => ({
     style: {
       backgroundColor: event.color || '#6fa8dc',
@@ -179,7 +218,6 @@ export default function AdminDashboard() {
   );
 
   /* ================= UI ================= */
-
   return (
     <div
       style={{
@@ -203,16 +241,29 @@ export default function AdminDashboard() {
         <div style={{ display: 'flex', gap: 20 }}>
           <img src={logoImg} width={150} />
           <div>
-            <h2>{adminName}</h2>
-            <p>Administrativni pregled odsustava</p>
+            <h2>Administrativni pregled odsustava</h2>
+            <p>{adminName}</p>
           </div>
         </div>
 
-        <button onClick={logout}>Logout</button>
+        <button
+  onClick={logout}
+  style={{
+    backgroundColor: '#0d5fb0', // tamnoplava
+    color: '#fff',               // tekst u beloj
+    padding: '10px 20px',        // smanjuje visinu i daje dobar padding
+    border: 'none',              // uklanja default border
+    borderRadius: 5,             // blagi zaobljeni uglovi
+    cursor: 'pointer',           // ruka kad hover
+    alignSelf: 'center',         // centriranje u parent flex
+    height: 'auto',
+  }}
+>
+  Odjavi se
+</button>
       </div>
 
       {/* ===== ENTERPRISE GRID ===== */}
-
       <div
         style={{
           display: 'grid',
@@ -280,12 +331,12 @@ export default function AdminDashboard() {
               </strong>
 
               <p>
-                {new Date(e.startDate).toLocaleDateString()} →
+                {new Date(e.startDate).toLocaleDateString()} →{' '}
                 {new Date(e.endDate).toLocaleDateString()}
               </p>
 
               <button onClick={() => approve(e.id)}>Odobri</button>
-              <button onClick={() => reject(e.id)}>Odbij</button>
+              <button onClick={() => openRejectModal(e.id)}>Odbij</button>
             </div>
           ))}
         </div>
@@ -330,9 +381,6 @@ export default function AdminDashboard() {
               .map(user => (
                 <div
                   key={user.id}
-                  onClick={() =>
-                    navigate(`/admin/user/${user.id}`)
-                  }
                   style={{
                     padding: 15,
                     borderRadius: 10,
@@ -345,13 +393,31 @@ export default function AdminDashboard() {
                     {user.name} {user.surname}
                   </strong>
                   <p>{user.email}</p>
+                  <p>Preostali dani: {user.remainingDays}</p>
+
+                  <button
+                    onClick={() =>
+                      navigate(`/admin/user/${user.id}/pdf`)
+                    }
+                    style={{ marginRight: 5 }}
+                  >
+                    Otvori PDF
+                  </button>
+                  <button
+                    onClick={() => {
+                      setBalanceUserId(user.id);
+                      setBalanceModalOpen(true);
+                    }}
+                  >
+                    Dodaj balans
+                  </button>
                 </div>
               ))}
           </div>
         </div>
       </div>
 
-      {/* MODAL */}
+      {/* MODAL ODSUSTVA */}
       {selectedDateEvents && (
         <div
           onClick={() => setSelectedDateEvents(null)}
@@ -378,7 +444,7 @@ export default function AdminDashboard() {
               <div key={e.id}>
                 <strong>{e.userName}</strong>
                 <p>
-                  {e.start.toLocaleDateString()} →
+                  {e.start.toLocaleDateString()} →{' '}
                   {e.end.toLocaleDateString()}
                 </p>
               </div>
@@ -386,12 +452,111 @@ export default function AdminDashboard() {
 
             <button
               onClick={() => setSelectedDateEvents(null)}
+              style={{ marginTop: 10 }}
             >
               Zatvori
             </button>
           </div>
         </div>
       )}
+
+      {/* BALANCE MODAL */}
+{balanceModalOpen && (
+  <div
+    onClick={() => setBalanceModalOpen(false)}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 9999, // <--- overlay iznad kalendara
+    }}
+  >
+    <div
+      onClick={e => e.stopPropagation()}
+      style={{
+        background: '#fff',
+        padding: 20,
+        borderRadius: 10,
+        width: 350, // fiksna širina za balans modal
+        maxWidth: '90%',
+        zIndex: 10000, // <--- modal sadržaj iznad overlaya i kalendara
+      }}
+    >
+      <h3>Unesi novi balans dana</h3>
+      <input
+        type="number"
+        value={newBalance}
+        onChange={e => setNewBalance(parseInt(e.target.value))}
+        placeholder="Broj dana"
+        style={{ marginBottom: 10 }}
+      />
+      <input
+        type="number"
+        value={balanceYear}
+        onChange={e => setBalanceYear(parseInt(e.target.value))}
+        placeholder="Godina"
+      />
+      <div style={{ marginTop: 10 }}>
+        <button onClick={addBalance}>Sačuvaj</button>
+        <button
+          onClick={() => setBalanceModalOpen(false)}
+          style={{ marginLeft: 5 }}
+        >
+          Zatvori
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+      {/* REJECT MODAL */}
+      {/* REJECT MODAL */}
+{rejectModalOpen && (
+  <div
+    onClick={() => setRejectModalOpen(false)}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 9999, // <--- OVDE
+    }}
+  >
+    <div
+      onClick={e => e.stopPropagation()}
+      style={{
+        background: '#fff',
+        padding: 20,
+        borderRadius: 10,
+        width: 400, // opcionalno fiksna širina
+        maxWidth: '90%',
+        zIndex: 10000, // <--- OVDE
+      }}
+    >
+      <h3>Unesi razlog odbijanja odsustva</h3>
+      <textarea
+        value={rejectReason}
+        onChange={e => setRejectReason(e.target.value)}
+        rows={4}
+        style={{ width: '100%' }}
+      />
+      <div style={{ marginTop: 10 }}>
+        <button onClick={rejectWithReason}>Potvrdi</button>
+        <button
+          onClick={() => setRejectModalOpen(false)}
+          style={{ marginLeft: 5 }}
+        >
+          Zatvori
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

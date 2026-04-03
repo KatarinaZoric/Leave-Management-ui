@@ -84,7 +84,7 @@ export default function Login() {
             textAlign: "center",
           }}
         >
-          Dobrodošli u CPSU
+          Dobrodošli u CPSUNS
         </h1>
         <p
           style={{

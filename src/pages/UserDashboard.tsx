@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
 import { useEffect, useState } from "react";
 import { api } from "../services/api";
@@ -18,6 +19,7 @@ type LeaveEvent = {
   endDate: string;
   status: string;
   note?: string;
+  rejectReason?: string;
 };
 
 type LeaveBalance = {
@@ -48,6 +50,14 @@ export default function UserDashboard() {
 
   const [balances, setBalances] = useState<LeaveBalance[]>([]);
 
+  // ================= PASSWORD MODAL =================
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordMessage, setPasswordMessage] = useState("");
 
   // 🎨 COLORS
   const colors = {
@@ -72,7 +82,6 @@ export default function UserDashboard() {
   const countWorkingDays = (start: Date, end: Date) => {
     let count = 0;
     let current = new Date(start);
-
     while (current <= end) {
       const day = current.getDay();
       if (day !== 0 && day !== 6) count++;
@@ -121,7 +130,7 @@ export default function UserDashboard() {
 
         setUserName(fullName);
 
-        // fetch leave balances sa nove rute
+        // fetch leave balances
         const balanceData: LeaveBalance[] = await api.getMyAllBalances();
         setBalances(balanceData);
       }
@@ -168,14 +177,14 @@ export default function UserDashboard() {
     if (!hasWorkingDays(start, end))
       return alert("Mora sadržati radne dane.");
 
-     const overlap = events.some((existing) => {
-    if (existing.status !== "APPROVED") return false; // proveravamo samo odobrena
-    const existingStart = new Date(existing.startDate);
-    const existingEnd = new Date(existing.endDate);
-    return start <= existingEnd && end >= existingStart;
-  });
+    const overlap = events.some((existing) => {
+      if (existing.status !== "APPROVED") return false;
+      const existingStart = new Date(existing.startDate);
+      const existingEnd = new Date(existing.endDate);
+      return start <= existingEnd && end >= existingStart;
+    });
 
-  if (overlap) return alert("Već imate odsustvo u ovom periodu.");
+    if (overlap) return alert("Već imate odsustvo u ovom periodu.");
 
     const currentBalance = balances.find(
       (b) => b.year === new Date().getFullYear()
@@ -186,9 +195,7 @@ export default function UserDashboard() {
     try {
       await api.createLeaveEvent(newEvent);
 
-      setSuccessMessage(
-        "Zahtev poslat. Odgovor očekujte u najkraćem roku."
-      );
+      setSuccessMessage("Zahtev poslat. Odgovor očekujte u najkraćem roku.");
       setTimeout(() => setSuccessMessage(""), 10000);
 
       setNewEvent({
@@ -201,6 +208,26 @@ export default function UserDashboard() {
       fetchData();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // ================= CHANGE PASSWORD =================
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { oldPassword, newPassword, confirmPassword } = passwordForm;
+
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage("Lozinke se ne poklapaju!");
+      return;
+    }
+
+    try {
+      await api.changePassword({ oldPassword, newPassword });
+      setPasswordMessage("Lozinka uspešno promenjena!");
+      setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+      setShowChangePassword(false);
+    } catch (err: any) {
+      setPasswordMessage(err.response?.data?.message || "Greška pri promeni lozinke");
     }
   };
 
@@ -220,46 +247,63 @@ export default function UserDashboard() {
       }}
     >
       {/* HEADER */}
-<div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 30,
-  }}
->
-  <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-    <img
-      src={logo}
-      style={{
-        width: 200,
-        height: 200,
-        objectFit: "contain",
-        borderRadius: 8,
-      }}
-    />
-    <strong style={{ fontSize: 26 }}>
-      {userName} , dobrodošli u CPSU evidenciju odsustava
-    </strong>
-  </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 30,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <img
+            src={logo}
+            style={{
+              width: 200,
+              height: 200,
+              objectFit: "contain",
+              borderRadius: 8,
+            }}
+          />
+          <strong style={{ fontSize: 26 }}>
+            {userName} , dobrodošli u CPSUNS evidenciju odsustava
+          </strong>
+        </div>
 
-  <button
-    onClick={logout}
-    style={{
-      background: colors.primary,
-      color: "white",
-      border: "none",
-      padding: "6px 12px",
-      borderRadius: 6,
-      cursor: "pointer",
-      fontSize: 14,
-    }}
-  >
-    Logout
-  </button>
-</div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={() => setShowChangePassword(true)}
+            style={{
+              background: "#10b981",
+              color: "white",
+              border: "none",
+              padding: "6px 12px",
+              borderRadius: 6,
+              cursor: "pointer",
+              fontSize: 14,
+            }}
+          >
+            Promeni lozinku
+          </button>
 
-      {/* MODAL */}
+          <button
+            onClick={logout}
+            style={{
+              background: colors.primary,
+              color: "white",
+              border: "none",
+              padding: "6px 12px",
+              borderRadius: 6,
+              cursor: "pointer",
+              fontSize: 14,
+            }}
+          >
+            Odjavi se
+          </button>
+        </div>
+      </div>
+
+      {/* SUCCESS MODAL */}
       {successMessage && (
         <div
           style={{
@@ -275,6 +319,103 @@ export default function UserDashboard() {
           }}
         >
           {successMessage}
+        </div>
+      )}
+
+      {/* CHANGE PASSWORD MODAL */}
+      {showChangePassword && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1001,
+          }}
+        >
+          <div
+            style={{
+              background: "white",
+              padding: 20,
+              borderRadius: 10,
+              width: 400,
+              maxWidth: "90%",
+            }}
+          >
+            <h3>Promena lozinke</h3>
+
+            <form onSubmit={handleChangePassword}>
+              <input
+                type="password"
+                placeholder="Stara lozinka"
+                value={passwordForm.oldPassword}
+                onChange={(e) =>
+                  setPasswordForm((prev) => ({ ...prev, oldPassword: e.target.value }))
+                }
+                style={inputStyle}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Nova lozinka"
+                value={passwordForm.newPassword}
+                onChange={(e) =>
+                  setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))
+                }
+                style={inputStyle}
+                required
+              />
+              <input
+                type="password"
+                placeholder="Potvrdi novu lozinku"
+                value={passwordForm.confirmPassword}
+                onChange={(e) =>
+                  setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))
+                }
+                style={inputStyle}
+                required
+              />
+
+              {passwordMessage && (
+                <p style={{ color: "red", marginBottom: 10 }}>{passwordMessage}</p>
+              )}
+
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <button
+                  type="submit"
+                  style={{
+                    background: "#3b82f6",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 12px",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                  }}
+                >
+                  Promeni
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowChangePassword(false)}
+                  style={{
+                    background: "#ef4444",
+                    color: "white",
+                    border: "none",
+                    padding: "8px 12px",
+                    borderRadius: 6,
+                    cursor: "pointer",
+                  }}
+                >
+                  Otkaži
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
@@ -316,41 +457,41 @@ export default function UserDashboard() {
         })}
       </div>
 
-   {/* MINI KALENDAR */}
-<div
-  style={{
-    background: "white",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 20,
-  }}
->
-  <h4>Kalendarski pregled svih odsustava</h4>
-  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-    {events
-      .slice() // kopiramo array da ne mutiramo state
-      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-      .slice(0, 10)
-      .map((e) => (
-        <div
-          key={e.id}
-          style={{
-            padding: "5px 10px",
-            borderRadius: 6,
-            fontSize: 12,
-            background:
-              e.status === "APPROVED"
-                ? "#bbf7d0"
-                : e.status === "REJECTED"
-                ? "#fecaca"
-                : "#fde68a",
-          }}
-        >
-          {new Date(e.startDate).toLocaleDateString()}
+      {/* MINI KALENDAR */}
+      <div
+        style={{
+          background: "white",
+          padding: 15,
+          borderRadius: 10,
+          marginBottom: 20,
+        }}
+      >
+        <h4>Kalendarski pregled svih odsustava</h4>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+          {events
+            .slice()
+            .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+            .slice(0, 10)
+            .map((e) => (
+              <div
+                key={e.id}
+                style={{
+                  padding: "5px 10px",
+                  borderRadius: 6,
+                  fontSize: 12,
+                  background:
+                    e.status === "APPROVED"
+                      ? "#bbf7d0"
+                      : e.status === "REJECTED"
+                      ? "#fecaca"
+                      : "#fde68a",
+                }}
+              >
+                {new Date(e.startDate).toLocaleDateString()}
+              </div>
+            ))}
         </div>
-      ))}
-  </div>
-</div>
+      </div>
 
       <div style={{ display: "flex", gap: 20 }}>
         {/* FORMA */}
@@ -448,30 +589,44 @@ export default function UserDashboard() {
           </select>
 
           {filteredEvents.map((e) => (
-            <div
-              key={e.id}
-              style={{
-                background: "#fff",
-                padding: 15,
-                marginBottom: 10,
-                borderRadius: 12,
-                borderLeft: `5px solid ${
-                  e.status === "APPROVED"
-                    ? "#22c55e"
-                    : e.status === "REJECTED"
-                    ? "#ef4444"
-                    : "#f59e0b"
-                }`,
-              }}
-            >
-              <strong>{e.leaveType.name}</strong>
-              <p>
-                {new Date(e.startDate).toLocaleDateString()} →{" "}
-                {new Date(e.endDate).toLocaleDateString()}
-              </p>
-              <p>{e.status}</p>
-            </div>
-          ))}
+  <div
+    key={e.id}
+    style={{
+      background: "#fff",
+      padding: 15,
+      marginBottom: 10,
+      borderRadius: 12,
+      borderLeft: `5px solid ${
+        e.status === "APPROVED"
+          ? "#22c55e"
+          : e.status === "REJECTED"
+          ? "#ef4444"
+          : "#f59e0b"
+      }`,
+    }}
+  >
+    <strong>{e.leaveType.name}</strong>
+    <p>
+      {new Date(e.startDate).toLocaleDateString()} →{" "}
+      {new Date(e.endDate).toLocaleDateString()}
+    </p>
+    <p>Status: {e.status}</p>
+
+    {/* Prikaz razloga odbijanja */}
+    {e.status === "REJECTED" && e.rejectReason && (
+      <p style={{ color: "red", marginTop: 5 }}>
+        <strong>Obrazloženje odbijanja:</strong> {e.rejectReason}
+      </p>
+    )}
+
+    {/* Prikaz napomene ako postoji */}
+    {e.note && (
+      <p style={{ marginTop: 5 }}>
+        <strong>Napomena:</strong> {e.note}
+      </p>
+    )}
+  </div>
+))}
         </div>
       </div>
     </div>

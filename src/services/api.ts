@@ -64,11 +64,13 @@ export const api = {
       headers: getHeaders(),
     }).then(handleResponse),
 
-  rejectLeave: (id: string) =>
+  rejectLeave: (id: string, reason: string) =>
     fetch(`${BASE_URL}/leave-events/${id}/reject`, {
       method: "PATCH",
       headers: getHeaders(),
+      body: JSON.stringify({ reason }), // <-- dodajemo razlog
     }).then(handleResponse),
+
 
   // ================= TYPES =================
   getLeaveTypes: () =>
@@ -115,4 +117,59 @@ getMyAllBalances: async () => {
     validUntil: b.validUntil,
   }));
 },
+
+changePassword: async ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) => {
+  const res = await fetch(`${BASE_URL}/auth/change-password`, {
+    method: "PATCH", // ili "POST" zavisi od tvoje rute na backendu
+    headers: getHeaders(),
+    body: JSON.stringify({ oldPassword, newPassword }),
+  });
+
+  return handleResponse(res);
+},
+
+updateUserBalance: async (
+  userId: string,
+  totalDays: number,
+  year?: number,
+  remainingDays?: number
+) => {
+  // dohvatimo email korisnika preko userId
+  const users = await api.getUsers();
+  const user = users.find((u: any) => u.id === userId);
+  if (!user) throw new Error("Korisnik nije pronađen");
+
+  const body = {
+    email: user.email,
+    totalDays,
+    remainingDays: remainingDays ?? totalDays,
+    year: year ?? new Date().getFullYear(),
+    validUntil: new Date(new Date().getFullYear(), 11, 31).toISOString(), // kraj godine
+  };
+
+  const res = await fetch(`${BASE_URL}/leave-balance`, {
+    method: "POST",
+    headers: getHeaders(),
+    body: JSON.stringify(body),
+  });
+
+  return handleResponse(res);
+},
+
+getUserBalances: async (userId: string) => {
+  const res = await fetch(`${BASE_URL}/leave-balance/my/all?userId=${userId}`, {
+    headers: getHeaders(),
+  });
+  const data = await handleResponse(res);
+
+  return data.map((b: any) => ({
+    id: b.id,
+    year: b.year,
+    totalDays: b.totalDays,
+    usedDays: b.usedDays,
+    remainingDays: b.totalDays - b.usedDays,
+    validUntil: b.validUntil,
+  }));
+},
+
 };
