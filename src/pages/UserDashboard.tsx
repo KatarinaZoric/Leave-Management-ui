@@ -20,6 +20,13 @@ type LeaveEvent = {
   note?: string;
 };
 
+type LeaveBalance = {
+  year: number;
+  totalDays: number;
+  usedDays: number;
+  remainingDays: number;
+};
+
 export default function UserDashboard() {
   const navigate = useNavigate();
 
@@ -29,12 +36,6 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
 
   const [filter, setFilter] = useState("ALL");
-
-  const [remainingDays, setRemainingDays] = useState({
-    currentYear: 0,
-    previousYear: 0,
-  });
-
   const [requestedDays, setRequestedDays] = useState(0);
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -44,6 +45,9 @@ export default function UserDashboard() {
     endDate: "",
     note: "",
   });
+
+  const [balances, setBalances] = useState<LeaveBalance[]>([]);
+
 
   // 🎨 COLORS
   const colors = {
@@ -65,7 +69,6 @@ export default function UserDashboard() {
   };
 
   // ================= HELPERS =================
-
   const countWorkingDays = (start: Date, end: Date) => {
     let count = 0;
     let current = new Date(start);
@@ -94,36 +97,7 @@ export default function UserDashboard() {
     return false;
   };
 
-  const calculateRemainingDays = (events: LeaveEvent[]) => {
-    const TOTAL = 20; // broj dana godišnjeg po godini
-    const currentYear = new Date().getFullYear();
-    const previousYear = currentYear - 1;
-
-    let usedCurrent = 0;
-    let usedPrevious = 0;
-
-    events.forEach((e) => {
-      if (e.status !== "APPROVED") return;
-
-      const start = new Date(e.startDate);
-      const end = new Date(e.endDate);
-      const days = countWorkingDays(start, end);
-
-      if (start.getFullYear() === currentYear) usedCurrent += days;
-      if (start.getFullYear() === previousYear) usedPrevious += days;
-    });
-
-    // Svi preostali dani iz prethodne godine
-    const previousYearRemaining = Math.max(0, TOTAL - usedPrevious);
-
-    return {
-      currentYear: TOTAL - usedCurrent + previousYearRemaining, // uključuje prenesene dane
-      previousYear: previousYearRemaining,
-    };
-  };
-
   // ================= FETCH =================
-
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -146,6 +120,10 @@ export default function UserDashboard() {
             : payload.name || payload.username || payload.email || "User";
 
         setUserName(fullName);
+
+        // fetch leave balances sa nove rute
+        const balanceData: LeaveBalance[] = await api.getMyAllBalances();
+        setBalances(balanceData);
       }
 
       // filtriranje samo mojih odsustava
@@ -155,7 +133,6 @@ export default function UserDashboard() {
 
       setEvents(userEvents);
       setLeaveTypes(typesData);
-      setRemainingDays(calculateRemainingDays(userEvents));
     } catch (err) {
       console.error(err);
     } finally {
@@ -168,7 +145,6 @@ export default function UserDashboard() {
   }, []);
 
   // ================= LIVE DAYS =================
-
   useEffect(() => {
     if (newEvent.startDate && newEvent.endDate) {
       const start = new Date(newEvent.startDate);
@@ -180,7 +156,6 @@ export default function UserDashboard() {
   }, [newEvent.startDate, newEvent.endDate]);
 
   // ================= SUBMIT =================
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -193,17 +168,29 @@ export default function UserDashboard() {
     if (!hasWorkingDays(start, end))
       return alert("Mora sadržati radne dane.");
 
-    if (requestedDays > remainingDays.currentYear)
-      return alert("Nemaš dovoljno preostalih dana (uključujući prethodnu godinu).");
+     const overlap = events.some((existing) => {
+    if (existing.status !== "APPROVED") return false; // proveravamo samo odobrena
+    const existingStart = new Date(existing.startDate);
+    const existingEnd = new Date(existing.endDate);
+    return start <= existingEnd && end >= existingStart;
+  });
+
+  if (overlap) return alert("Već imate odsustvo u ovom periodu.");
+
+    const currentBalance = balances.find(
+      (b) => b.year === new Date().getFullYear()
+    );
+    if (currentBalance && requestedDays > currentBalance.remainingDays)
+      return alert("Nemaš dovoljno preostalih dana.");
 
     try {
-      await api.createLeaveEvent(newEvent); // ne šaljemo userId
+      await api.createLeaveEvent(newEvent);
 
-      // Prikaži modal
-      setSuccessMessage("Zahtev poslat. Odgovor očekujte u najkraćem roku.");
+      setSuccessMessage(
+        "Zahtev poslat. Odgovor očekujte u najkraćem roku."
+      );
       setTimeout(() => setSuccessMessage(""), 10000);
 
-      // Reset forme
       setNewEvent({
         leaveTypeId: "",
         startDate: "",
@@ -224,9 +211,6 @@ export default function UserDashboard() {
       ? events
       : events.filter((e) => e.status === filter);
 
-  const usedDays = 20 - remainingDays.currentYear;
-  const percent = (usedDays / 20) * 100;
-
   return (
     <div
       style={{
@@ -236,28 +220,46 @@ export default function UserDashboard() {
       }}
     >
       {/* HEADER */}
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 30 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
-          <img src={logo} style={{ width: 100, height: 100 }} />
-          <strong>{userName}</strong>
-        </div>
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 30,
+  }}
+>
+  <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+    <img
+      src={logo}
+      style={{
+        width: 200,
+        height: 200,
+        objectFit: "contain",
+        borderRadius: 8,
+      }}
+    />
+    <strong style={{ fontSize: 26 }}>
+      {userName} , dobrodošli u CPSU evidenciju odsustava
+    </strong>
+  </div>
 
-        <button
-          onClick={logout}
-          style={{
-            background: colors.primary,
-            color: "white",
-            border: "none",
-            padding: "8px 16px",
-            borderRadius: 8,
-            cursor: "pointer",
-          }}
-        >
-          Logout
-        </button>
-      </div>
+  <button
+    onClick={logout}
+    style={{
+      background: colors.primary,
+      color: "white",
+      border: "none",
+      padding: "6px 12px",
+      borderRadius: 6,
+      cursor: "pointer",
+      fontSize: 14,
+    }}
+  >
+    Logout
+  </button>
+</div>
 
-      {/* MODAL ZA USPEŠAN ZAHTEV */}
+      {/* MODAL */}
       {successMessage && (
         <div
           style={{
@@ -276,50 +278,90 @@ export default function UserDashboard() {
         </div>
       )}
 
-      {/* PROGRESS */}
+      {/* LEAVE BALANCE */}
       <div style={{ marginBottom: 20 }}>
-        <p>Iskorišćeno: {usedDays} / 20 dana</p>
-        <div style={{ height: 10, background: "#ddd", borderRadius: 5 }}>
-          <div
-            style={{
-              width: `${percent}%`,
-              background: colors.secondary,
-              height: "100%",
-              borderRadius: 5,
-            }}
-          />
-        </div>
-      </div>
+        <h3>Preostali dani godišnjeg</h3>
+        {balances.length === 0 && <p>Nema podataka o balansima.</p>}
+        {balances.map((b) => {
+          const total = Number(b.totalDays) || 0;
+          const used = Number(b.usedDays) || 0;
+          const remaining = Number(b.remainingDays) || total - used;
 
-      {/* MINI KALENDAR */}
-      <div style={{ background: "white", padding: 15, borderRadius: 10, marginBottom: 20 }}>
-        <h4>Pregled odsustava</h4>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-          {events.slice(0, 10).map((e) => (
-            <div
-              key={e.id}
-              style={{
-                padding: "5px 10px",
-                borderRadius: 6,
-                fontSize: 12,
-                background:
-                  e.status === "APPROVED"
-                    ? "#bbf7d0"
-                    : e.status === "REJECTED"
-                    ? "#fecaca"
-                    : "#fde68a",
-              }}
-            >
-              {new Date(e.startDate).toLocaleDateString()}
+          const percent = total > 0 ? (used / total) * 100 : 0;
+
+          return (
+            <div key={b.year} style={{ marginBottom: 12 }}>
+              <strong>
+                Godina {b.year} - Iskorišćeno: {used} / {total}, Preostalo: {remaining}
+              </strong>
+              <div
+                style={{
+                  height: 12,
+                  background: "#ddd",
+                  borderRadius: 6,
+                  marginTop: 4,
+                }}
+              >
+                <div
+                  style={{
+                    width: `${percent}%`,
+                    background: "#18a713",
+                    height: "100%",
+                    borderRadius: 6,
+                  }}
+                />
+              </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      {/* MAIN */}
+   {/* MINI KALENDAR */}
+<div
+  style={{
+    background: "white",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+  }}
+>
+  <h4>Kalendarski pregled svih odsustava</h4>
+  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+    {events
+      .slice() // kopiramo array da ne mutiramo state
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+      .slice(0, 10)
+      .map((e) => (
+        <div
+          key={e.id}
+          style={{
+            padding: "5px 10px",
+            borderRadius: 6,
+            fontSize: 12,
+            background:
+              e.status === "APPROVED"
+                ? "#bbf7d0"
+                : e.status === "REJECTED"
+                ? "#fecaca"
+                : "#fde68a",
+          }}
+        >
+          {new Date(e.startDate).toLocaleDateString()}
+        </div>
+      ))}
+  </div>
+</div>
+
       <div style={{ display: "flex", gap: 20 }}>
         {/* FORMA */}
-        <div style={{ flex: 1, background: "white", padding: 20, borderRadius: 10 }}>
+        <div
+          style={{
+            flex: 1,
+            background: "white",
+            padding: 20,
+            borderRadius: 10,
+          }}
+        >
           <h3>Novi zahtev</h3>
 
           <form onSubmit={handleSubmit}>
@@ -395,7 +437,10 @@ export default function UserDashboard() {
         <div style={{ flex: 2 }}>
           <h3>Moja odsustva</h3>
 
-          <select onChange={(e) => setFilter(e.target.value)} style={{ marginBottom: 10 }}>
+          <select
+            onChange={(e) => setFilter(e.target.value)}
+            style={{ marginBottom: 10 }}
+          >
             <option value="ALL">Sva</option>
             <option value="APPROVED">Odobrena</option>
             <option value="PENDING">Na čekanju</option>

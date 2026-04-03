@@ -84,8 +84,35 @@ export const api = {
     }).then(handleResponse),
 
   // USER balance
-  getMyLeaveBalance: () =>
-    fetch(`${BASE_URL}/leave-balance/my`, {
-      headers: getHeaders(),
-    }).then(handleResponse),
+  getMyLeaveBalance: async () => {
+  const res = await fetch(`${BASE_URL}/leave-balance/my`, {
+    headers: getHeaders(),
+  });
+
+  const data = await handleResponse(res);
+  
+  // Na primer, ako backend vraća listu balansa po godinama, uzmemo trenutnu godinu
+  const currentYear = new Date().getFullYear();
+  const currentBalance = data.find((b: any) => b.year === currentYear);
+
+  return currentBalance ?? { usedDays: 0, totalDays: 0 };
+},
+
+getMyAllBalances: async () => {
+  const res = await fetch(`${BASE_URL}/leave-balance/my/all`, {
+    headers: getHeaders(),
+  });
+
+  const data = await handleResponse(res);
+
+  // Mapiramo da imamo remainingDays
+  return data.map((b: any) => ({
+    id: b.id,
+    year: b.year,
+    totalDays: b.totalDays,
+    usedDays: b.usedDays,
+    remainingDays: b.totalDays - b.usedDays,
+    validUntil: b.validUntil,
+  }));
+},
 };
