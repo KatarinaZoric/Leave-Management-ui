@@ -172,4 +172,23 @@ getUserBalances: async (userId: string) => {
   }));
 },
 
+// ================= USERS WITH BALANCES =================
+getUsersWithBalances: async () => {
+  const res = await fetch(`${BASE_URL}/leave-balance/users`, {
+    headers: getHeaders(),
+  });
+
+  const data = await handleResponse(res);
+
+  // Ovde mapiramo direktno ako treba
+  return data.map((u: any) => ({
+    id: u.id,
+    name: u.name,
+    surname: u.surname,
+    email: u.email,
+    role: u.role,
+    remainingDays: u.remainingDays, // {2025: 5, 2026: 12}
+  }));
+},
+
 };

@@ -23,7 +23,7 @@ type User = {
   name: string;
   surname: string;
   email: string;
-  remainingDays: number;
+  remainingDays: Record<string, number>; // { 2025: 5, 2026: 12 }
 };
 
 type LeaveEventResponse = {
@@ -90,7 +90,7 @@ export default function AdminDashboard() {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       setUserName([payload.name, payload.surname].filter(Boolean).join(' '));
-      setRole(payload.role || 'EMPLOYEE'); // assume token sadrži role: ADMIN | MANAGER | EMPLOYEE
+      setRole(payload.role || 'EMPLOYEE'); 
     } catch {}
   }, []);
 
@@ -116,12 +116,10 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
     const weekend = isWeekend(current);
 
     if (!weekend && !rangeStart) {
-      // počinje nova lenta
       rangeStart = new Date(current);
     }
 
     if ((weekend || current.getTime() === end.getTime()) && rangeStart) {
-      // završavamo lentu
       const rangeEnd = weekend
         ? new Date(current.getTime() - 86400000)
         : new Date(current);
@@ -169,14 +167,14 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
 
   /* ================= FETCH USERS ================= */
   const fetchUsers = async () => {
-    const data = await api.getUsers();
-    setUsers(data);
-  };
+  const data: User[] = await api.getUsersWithBalances(); 
+  setUsers(data);
+};
 
   useEffect(() => {
     if (balanceYear) {
       const nextYear = balanceYear + 1;
-      const dateStr = `${nextYear}-06-01`; // 1. jun naredne godine
+      const dateStr = `${nextYear}-06-01`;
       setValidUntilDate(dateStr);
     }
   }, [balanceYear]);
@@ -214,7 +212,7 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
 
     try {
       await api.updateUserBalance(balanceUserId, newBalance, balanceYear);
-      await fetchUsers(); // refresh users list
+      await fetchUsers(); 
       setBalanceModalOpen(false);
       setNewBalance(0);
       setBalanceYear(new Date().getFullYear());
@@ -250,7 +248,7 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
   if (isWeekend) {
     return {
       style: {
-        backgroundColor: '#7796f4', // SIVI vikendi
+        backgroundColor: '#7796f4',
       },
     };
   }
@@ -463,43 +461,46 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
           <p>{user.email}</p>
 
           {/* Pregled preostalih dana sa progresom */}
-          {user.remainingDays ? (
-            Object.entries(user.remainingDays).map(([year, remaining]) => {
-              const total = 20; // pretpostavljeni ukupni dani godišnje
-              const remainingDays = Number(remaining);
-              const used = total - remainingDays;
-              const percent = (used / total) * 100;
+          {/* Pregled preostalih dana sa progresom */}
+{user.remainingDays && typeof user.remainingDays === 'object' ? (
+  <div style={{ marginTop: 10 }}>
+    <strong>Preostali dani</strong>
+    {Object.entries(user.remainingDays).map(([year, remaining]) => {
+      const total = 20; 
+      const remainingDays = Number(remaining);
+      const used = total - remainingDays;
+      const percent = (used / total) * 100;
 
-              return (
-                <div key={year} style={{ marginBottom: 8 }}>
-                  <strong>
-                    Godina {year} - Preostalo: {remainingDays} dana
-                  </strong>
-                  <div
-                    style={{
-                      height: 10,
-                      background: "#ddd",
-                      borderRadius: 5,
-                      marginTop: 4,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${percent}%`,
-                        background: "#6edd6a",
-                        height: "100%",
-                        borderRadius: 5,
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <p>Nema podataka o preostalim danima</p>
-          )}
+      return (
+        <div key={year} style={{ marginBottom: 8 }}>
+          <span>
+            {year}: {remainingDays} dana
+          </span>
+          <div
+            style={{
+              height: 10,
+              background: "#ddd",
+              borderRadius: 5,
+              marginTop: 4,
+            }}
+          >
+            <div
+              style={{
+                width: `${percent}%`,
+                background: "#6edd6a",
+                height: "100%",
+                borderRadius: 5,
+              }}
+            />
+          </div>
+        </div>
+      );
+    })}
+  </div>
+) : (
+  <p>Nema podataka o preostalim danima</p>
+)}
 
-          {/* Dugmad */}
           <div style={{ marginTop: 10 }}>
             <button
               onClick={() => {
@@ -514,6 +515,8 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
       ))}
   </div>
 </div>
+
+{/* Ostatak koda za mesečni pregled, modale i ostalo ostaje identično */}
         {/* MONTHLY VIEW */}
         <div
           style={{
