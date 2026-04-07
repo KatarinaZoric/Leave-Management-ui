@@ -54,7 +54,8 @@ export default function AdminDashboard() {
   const [selectedDateEvents, setSelectedDateEvents] =
     useState<CalendarEvent[] | null>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [adminName, setAdminName] = useState('Administrator');
+  const [userName, setUserName] = useState('Korisnik');
+  const [role, setRole] = useState<'ADMIN' | 'MANAGER' | 'EMPLOYEE'>('EMPLOYEE');
 
   /* === USERS === */
   const [users, setUsers] = useState<User[]>([]);
@@ -71,15 +72,17 @@ export default function AdminDashboard() {
   const [rejectLeaveId, setRejectLeaveId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
-  /* ================= ADMIN NAME ================= */
+  const [validUntilDate, setValidUntilDate] = useState<string>('');
+
+  /* ================= USER INFO ================= */
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
+
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      setAdminName(
-        [payload.name, payload.surname].filter(Boolean).join(' ')
-      );
+      setUserName([payload.name, payload.surname].filter(Boolean).join(' '));
+      setRole(payload.role || 'EMPLOYEE'); // assume token sadrži role: ADMIN | MANAGER | EMPLOYEE
     } catch {}
   }, []);
 
@@ -107,6 +110,14 @@ export default function AdminDashboard() {
     setUsers(data);
   };
 
+useEffect(() => {
+  if (balanceYear) {
+    const nextYear = balanceYear + 1;
+    const dateStr = `${nextYear}-06-01`; // 1. jun naredne godine
+    setValidUntilDate(dateStr);
+  }
+}, [balanceYear]);
+
   useEffect(() => {
     fetchEvents();
     fetchUsers();
@@ -133,27 +144,28 @@ export default function AdminDashboard() {
   };
 
   const addBalance = async () => {
-    if (!balanceUserId || newBalance <= 0) {
-      alert('Unesite broj dana za balans');
-      return;
-    }
+  if (!balanceUserId || newBalance <= 0) {
+    alert('Unesite broj dana za balans');
+    return;
+  }
 
-    try {
-      await api.updateUserBalance(balanceUserId, newBalance, balanceYear);
-      await fetchUsers(); // osvežava listu korisnika sa novim balansima
+  try {
+    // SLANJE SAMO BALANCE YEAR I NEW BALANCE
+    await api.updateUserBalance(balanceUserId, newBalance, balanceYear);
 
-      // Reset modal i input polja
-      setBalanceModalOpen(false);
-      setNewBalance(0);
-      setBalanceYear(new Date().getFullYear());
-      setBalanceUserId(null);
+    await fetchUsers(); // osvežava listu korisnika sa novim balansima
 
-      alert('Balans uspešno dodat!');
-    } catch (err: any) {
-      console.error(err);
-      alert(err.message || 'Greška prilikom dodavanja balansa.');
-    }
-  };
+    setBalanceModalOpen(false);
+    setNewBalance(0);
+    setBalanceYear(new Date().getFullYear());
+    setBalanceUserId(null);
+
+    alert('Balans uspešno dodat!');
+  } catch (err: any) {
+    console.error(err);
+    alert(err.message || 'Greška prilikom dodavanja balansa.');
+  }
+};
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -195,9 +207,7 @@ export default function AdminDashboard() {
   };
 
   const EventComponent = ({ event }: { event: CalendarEvent }) => (
-    <div onClick={() => setSelectedDateEvents([event])}>
-      {event.title}
-    </div>
+    <div onClick={() => setSelectedDateEvents([event])}>{event.title}</div>
   );
 
   const CustomToolbar = ({ date, onNavigate }: any) => (
@@ -222,48 +232,51 @@ export default function AdminDashboard() {
     <div
       style={{
         padding: 20,
-        background: '#f0f4f8',
+        background: '#0077cc',
         minHeight: '100vh',
         fontFamily: 'Arial',
       }}
     >
       {/* HEADER */}
       <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          background: '#d9e8fb',
-          padding: 20,
-          borderRadius: 10,
-          marginBottom: 20,
-        }}
-      >
-        <div style={{ display: 'flex', gap: 20 }}>
-          <img src={logoImg} width={150} />
-          <div>
-            <h2>Administrativni pregled odsustava</h2>
-            <p>{adminName}</p>
-          </div>
-        </div>
-
-        <button
-  onClick={logout}
   style={{
-    backgroundColor: '#0d5fb0', // tamnoplava
-    color: '#fff',               // tekst u beloj
-    padding: '10px 20px',        // smanjuje visinu i daje dobar padding
-    border: 'none',              // uklanja default border
-    borderRadius: 5,             // blagi zaobljeni uglovi
-    cursor: 'pointer',           // ruka kad hover
-    alignSelf: 'center',         // centriranje u parent flex
-    height: 'auto',
+    display: "flex",
+    justifyContent: "space-between",
+    background: "#d9e8fb",
+    padding: 20,
+    borderRadius: 10,
+    marginBottom: 20,
+    minHeight: 120, // dovoljno visine da dugme može biti pri dnu
   }}
 >
-  Odjavi se
-</button>
-      </div>
+  {/* Leva strana sa logom i tekstom */}
+  <div style={{ display: "flex", gap: 15, alignItems: "center" }}>
+    <img src={logoImg} width={200} style={{ borderRadius: 5 }} />
 
-      {/* ===== ENTERPRISE GRID ===== */}
+    <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+      <h2 style={{ margin: 0 }}>Evidencija odsustava</h2>
+      <p style={{ margin: 0 }}>{userName}</p>
+    </div>
+  </div>
+
+  {/* Desna strana dugmeta */}
+  <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+    <button
+      onClick={logout}
+      style={{
+        backgroundColor: "#0d5fb0",
+        color: "#fff",
+        padding: "10px 20px",
+        border: "none",
+        borderRadius: 5,
+        cursor: "pointer",
+      }}
+    >
+      Odjavi se
+    </button>
+  </div>
+</div>
+      {/* ENTERPRISE GRID */}
       <div
         style={{
           display: 'grid',
@@ -295,10 +308,7 @@ export default function AdminDashboard() {
             views={['month']}
             selectable
             onSelectSlot={handleSelectSlot}
-            components={{
-              toolbar: CustomToolbar,
-              event: EventComponent,
-            }}
+            components={{ toolbar: CustomToolbar, event: EventComponent }}
           />
         </div>
 
@@ -313,32 +323,49 @@ export default function AdminDashboard() {
           }}
         >
           <h3>Zahtevi za odsustvo</h3>
-
           {pendingEvents.length === 0 && <p>Nema zahteva.</p>}
 
           {pendingEvents.map(e => (
-            <div
-              key={e.id}
-              style={{
-                background: '#fff',
-                padding: 10,
-                borderRadius: 8,
-                marginBottom: 10,
-              }}
-            >
-              <strong>
-                {e.user.name} {e.user.surname}
-              </strong>
+  <div
+    key={e.id}
+    style={{
+      background: '#fff',
+      padding: 10,
+      borderRadius: 8,
+      marginBottom: 10,
+    }}
+  >
+    <strong>
+      {e.user.name} {e.user.surname}
+    </strong>
 
-              <p>
-                {new Date(e.startDate).toLocaleDateString()} →{' '}
-                {new Date(e.endDate).toLocaleDateString()}
-              </p>
+    {/* Tip odsustva */}
+    <p>
+      <strong>{e.leaveType.name}</strong>
+    </p>
 
-              <button onClick={() => approve(e.id)}>Odobri</button>
-              <button onClick={() => openRejectModal(e.id)}>Odbij</button>
-            </div>
-          ))}
+    {/* Napomena ako postoji */}
+    {e.note && (
+      <p>
+        <strong>Napomena:</strong> {e.note}
+      </p>
+    )}
+
+    {/* Datumi */}
+    <p>
+      {new Date(e.startDate).toLocaleDateString()} →{' '}
+      {new Date(e.endDate).toLocaleDateString()}
+    </p>
+
+    {/* Dugmad samo za admina */}
+    {role === 'ADMIN' && (
+      <>
+        <button onClick={() => approve(e.id)}>Odobri</button>
+        <button onClick={() => openRejectModal(e.id)}>Odbij</button>
+      </>
+    )}
+  </div>
+))}
         </div>
 
         {/* USERS LIST BELOW */}
@@ -348,10 +375,11 @@ export default function AdminDashboard() {
             background: '#fff',
             padding: 20,
             borderRadius: 10,
+            border: '2px solid #a0b4e0', // samo border
+            backgroundColor: '#e6ebf2',
           }}
         >
           <h3>Lista korisnika</h3>
-
           <input
             placeholder="Pretraži korisnika..."
             onChange={e => setSearch(e.target.value)}
@@ -363,12 +391,10 @@ export default function AdminDashboard() {
               border: '1px solid #ccc',
             }}
           />
-
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns:
-                'repeat(auto-fill, minmax(240px,1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(240px,1fr))',
               gap: 15,
             }}
           >
@@ -396,12 +422,10 @@ export default function AdminDashboard() {
                   <p>Preostali dani: {user.remainingDays}</p>
 
                   <button
-                    onClick={() =>
-                      navigate(`/admin/user/${user.id}/pdf`)
-                    }
+                    onClick={() => navigate(`/admin/user/${user.id}/pdf`)}
                     style={{ marginRight: 5 }}
                   >
-                    Otvori PDF
+                    Pregled
                   </button>
                   <button
                     onClick={() => {
@@ -461,6 +485,7 @@ export default function AdminDashboard() {
       )}
 
       {/* BALANCE MODAL */}
+      {/* BALANCE MODAL */}
 {balanceModalOpen && (
   <div
     onClick={() => setBalanceModalOpen(false)}
@@ -471,7 +496,7 @@ export default function AdminDashboard() {
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      zIndex: 9999, // <--- overlay iznad kalendara
+      zIndex: 9999,
     }}
   >
     <div
@@ -480,26 +505,50 @@ export default function AdminDashboard() {
         background: '#fff',
         padding: 20,
         borderRadius: 10,
-        width: 350, // fiksna širina za balans modal
+        width: 350,
         maxWidth: '90%',
-        zIndex: 10000, // <--- modal sadržaj iznad overlaya i kalendara
+        zIndex: 10000,
       }}
     >
       <h3>Unesi novi balans dana</h3>
+
+      {/* Broj dana */}
       <input
         type="number"
         value={newBalance}
         onChange={e => setNewBalance(parseInt(e.target.value))}
         placeholder="Broj dana"
-        style={{ marginBottom: 10 }}
+        style={{ marginBottom: 10, width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
       />
+
+      {/* Godina */}
       <input
         type="number"
         value={balanceYear}
         onChange={e => setBalanceYear(parseInt(e.target.value))}
         placeholder="Godina"
+        style={{ marginBottom: 10, width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
       />
-      <div style={{ marginTop: 10 }}>
+
+      {/* Automatski validUntil */}
+      <div style={{ marginBottom: 10 }}>
+  <label>Validno do:</label>
+  <input
+    type="text"
+    value={validUntilDate} // samo informacija
+    readOnly
+    style={{
+      width: '100%',
+      padding: 8,
+      borderRadius: 6,
+      border: '1px solid #ccc',
+      backgroundColor: '#f3f3f3',
+    }}
+  />
+</div>
+
+      {/* Dugmad */}
+      <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
         <button onClick={addBalance}>Sačuvaj</button>
         <button
           onClick={() => setBalanceModalOpen(false)}
@@ -513,50 +562,49 @@ export default function AdminDashboard() {
 )}
 
       {/* REJECT MODAL */}
-      {/* REJECT MODAL */}
-{rejectModalOpen && (
-  <div
-    onClick={() => setRejectModalOpen(false)}
-    style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 9999, // <--- OVDE
-    }}
-  >
-    <div
-      onClick={e => e.stopPropagation()}
-      style={{
-        background: '#fff',
-        padding: 20,
-        borderRadius: 10,
-        width: 400, // opcionalno fiksna širina
-        maxWidth: '90%',
-        zIndex: 10000, // <--- OVDE
-      }}
-    >
-      <h3>Unesi razlog odbijanja odsustva</h3>
-      <textarea
-        value={rejectReason}
-        onChange={e => setRejectReason(e.target.value)}
-        rows={4}
-        style={{ width: '100%' }}
-      />
-      <div style={{ marginTop: 10 }}>
-        <button onClick={rejectWithReason}>Potvrdi</button>
-        <button
+      {rejectModalOpen && (
+        <div
           onClick={() => setRejectModalOpen(false)}
-          style={{ marginLeft: 5 }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 9999,
+          }}
         >
-          Zatvori
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff',
+              padding: 20,
+              borderRadius: 10,
+              width: 400,
+              maxWidth: '90%',
+              zIndex: 10000,
+            }}
+          >
+            <h3>Unesi razlog odbijanja odsustva</h3>
+            <textarea
+              value={rejectReason}
+              onChange={e => setRejectReason(e.target.value)}
+              rows={4}
+              style={{ width: '100%' }}
+            />
+            <div style={{ marginTop: 10 }}>
+              <button onClick={rejectWithReason}>Potvrdi</button>
+              <button
+                onClick={() => setRejectModalOpen(false)}
+                style={{ marginLeft: 5 }}
+              >
+                Zatvori
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

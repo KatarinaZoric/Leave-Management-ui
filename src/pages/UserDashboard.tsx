@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable prefer-const */
 import { useEffect, useState } from "react";
@@ -246,62 +247,85 @@ export default function UserDashboard() {
         background: "linear-gradient(135deg, #dbeafe, #f1f5f9)",
       }}
     >
-      {/* HEADER */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 30,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <img
-            src={logo}
-            style={{
-              width: 200,
-              height: 200,
-              objectFit: "contain",
-              borderRadius: 8,
-            }}
-          />
-          <strong style={{ fontSize: 26 }}>
-            {userName} , dobrodošli u CPSUNS evidenciju odsustava
-          </strong>
-        </div>
+     {/* HEADER */}
+{/* HEADER */}
+<div
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 30,
+    padding: 20,
+    borderRadius: 10,
+    backgroundColor: "#0077cc", // tamno plava
+    height: 220,
+    boxSizing: "border-box",
+  }}
+>
+  {/* Leva strana */}
+  <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+    <img
+      src={logo}
+      style={{
+        width: 200,
+        height: 200,
+        objectFit: "contain",
+        borderRadius: 8,
+        // border uklonjen
+      }}
+    />
+    <strong
+      style={{
+        fontSize: 26,
+        color: "#e0f7ff", // svetloplava boja teksta
+      }}
+    >
+      {userName}, dobrodošli u CPSUNS evidenciju odsustava
+    </strong>
+  </div>
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <button
-            onClick={() => setShowChangePassword(true)}
-            style={{
-              background: "#10b981",
-              color: "white",
-              border: "none",
-              padding: "6px 12px",
-              borderRadius: 6,
-              cursor: "pointer",
-              fontSize: 14,
-            }}
-          >
-            Promeni lozinku
-          </button>
+  {/* Desna strana dugmadi */}
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "flex-end",
+      gap: 10,
+    }}
+  >
+    <button
+      onClick={() => setShowChangePassword(true)}
+      style={{
+        background: "#e0f7ff", // svetlo zelena
+        color: "#667474", // tamno plavi tekst
+        border: "none",
+        padding: "6px 12px",
+        borderRadius: 6,
+        cursor: "pointer",
+        fontSize: 14,
+        fontWeight: "bold",
+      }}
+    >
+      Promeni lozinku
+    </button>
 
-          <button
-            onClick={logout}
-            style={{
-              background: colors.primary,
-              color: "white",
-              border: "none",
-              padding: "6px 12px",
-              borderRadius: 6,
-              cursor: "pointer",
-              fontSize: 14,
-            }}
-          >
-            Odjavi se
-          </button>
-        </div>
-      </div>
+    <button
+      onClick={logout}
+      style={{
+        background: "#e0f7ff", // svetlo plava
+        color: "#667474", // tamno plavi tekst
+        border: "none",
+        padding: "6px 12px",
+        borderRadius: 6,
+        cursor: "pointer",
+        fontSize: 14,
+        fontWeight: "bold",
+      }}
+    >
+      Odjavi se
+    </button>
+  </div>
+</div>
 
       {/* SUCCESS MODAL */}
       {successMessage && (
@@ -321,107 +345,154 @@ export default function UserDashboard() {
           {successMessage}
         </div>
       )}
+{/* CHANGE PASSWORD MODAL */}
+{showChangePassword && (
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      background: "rgba(0,0,0,0.5)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 1001,
+      padding: 20, // dodat razmak na malim ekranima
+      boxSizing: "border-box",
+    }}
+  >
+    <div
+      style={{
+        background: "white",
+        padding: 30,
+        borderRadius: 10,
+        width: "100%",
+        maxWidth: 450,
+        boxSizing: "border-box",
+      }}
+    >
+      <h3 style={{ textAlign: "center", marginBottom: 20 }}>Promena lozinke</h3>
 
-      {/* CHANGE PASSWORD MODAL */}
-      {showChangePassword && (
+      <form
+        onSubmit={handleChangePassword}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <input
+          type="password"
+          placeholder="Stara lozinka"
+          value={passwordForm.oldPassword}
+          onChange={(e) =>
+            setPasswordForm((prev) => ({ ...prev, oldPassword: e.target.value }))
+          }
+          style={{
+            width: "100%",
+            maxWidth: 400,
+            padding: 10,
+            marginBottom: 15,
+            borderRadius: 6,
+            border: "1px solid #ccc",
+            boxSizing: "border-box",
+          }}
+          required
+        />
+
+        <input
+          type="password"
+          placeholder="Nova lozinka"
+          value={passwordForm.newPassword}
+          onChange={(e) =>
+            setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))
+          }
+          style={{
+            width: "100%",
+            maxWidth: 400,
+            padding: 10,
+            marginBottom: 15,
+            borderRadius: 6,
+            border: "1px solid #ccc",
+            boxSizing: "border-box",
+          }}
+          required
+        />
+
+        <input
+          type="password"
+          placeholder="Potvrdi novu lozinku"
+          value={passwordForm.confirmPassword}
+          onChange={(e) =>
+            setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))
+          }
+          style={{
+            width: "100%",
+            maxWidth: 400,
+            padding: 10,
+            marginBottom: 15,
+            borderRadius: 6,
+            border: "1px solid #ccc",
+            boxSizing: "border-box",
+          }}
+          required
+        />
+
+        {passwordMessage && (
+          <p style={{ color: "red", marginBottom: 10, textAlign: "center" }}>
+            {passwordMessage}
+          </p>
+        )}
+
         <div
           style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            background: "rgba(0,0,0,0.5)",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1001,
+            justifyContent: "space-between",
+            width: "100%",
+            maxWidth: 400,
           }}
         >
-          <div
+          <button
+            type="submit"
             style={{
-              background: "white",
-              padding: 20,
-              borderRadius: 10,
-              width: 400,
-              maxWidth: "90%",
+              background: "#3b82f6",
+              color: "white",
+              border: "none",
+              padding: "8px 12px",
+              borderRadius: 6,
+              cursor: "pointer",
+              flex: 1,
+              marginRight: 10,
             }}
           >
-            <h3>Promena lozinke</h3>
-
-            <form onSubmit={handleChangePassword}>
-              <input
-                type="password"
-                placeholder="Stara lozinka"
-                value={passwordForm.oldPassword}
-                onChange={(e) =>
-                  setPasswordForm((prev) => ({ ...prev, oldPassword: e.target.value }))
-                }
-                style={inputStyle}
-                required
-              />
-              <input
-                type="password"
-                placeholder="Nova lozinka"
-                value={passwordForm.newPassword}
-                onChange={(e) =>
-                  setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))
-                }
-                style={inputStyle}
-                required
-              />
-              <input
-                type="password"
-                placeholder="Potvrdi novu lozinku"
-                value={passwordForm.confirmPassword}
-                onChange={(e) =>
-                  setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))
-                }
-                style={inputStyle}
-                required
-              />
-
-              {passwordMessage && (
-                <p style={{ color: "red", marginBottom: 10 }}>{passwordMessage}</p>
-              )}
-
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <button
-                  type="submit"
-                  style={{
-                    background: "#3b82f6",
-                    color: "white",
-                    border: "none",
-                    padding: "8px 12px",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                  }}
-                >
-                  Promeni
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowChangePassword(false)}
-                  style={{
-                    background: "#ef4444",
-                    color: "white",
-                    border: "none",
-                    padding: "8px 12px",
-                    borderRadius: 6,
-                    cursor: "pointer",
-                  }}
-                >
-                  Otkaži
-                </button>
-              </div>
-            </form>
-          </div>
+            Promeni
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowChangePassword(false)}
+            style={{
+              background: "#ef4444",
+              color: "white",
+              border: "none",
+              padding: "8px 12px",
+              borderRadius: 6,
+              cursor: "pointer",
+              flex: 1,
+            }}
+          >
+            Otkaži
+          </button>
         </div>
-      )}
+      </form>
+    </div>
+  </div>
+)}
 
       {/* LEAVE BALANCE */}
       <div style={{ marginBottom: 20 }}>
-        <h3>Preostali dani godišnjeg</h3>
+        <h3>Pregled slobodnih dana</h3>
         {balances.length === 0 && <p>Nema podataka o balansima.</p>}
         {balances.map((b) => {
           const total = Number(b.totalDays) || 0;
@@ -446,7 +517,7 @@ export default function UserDashboard() {
                 <div
                   style={{
                     width: `${percent}%`,
-                    background: "#18a713",
+                    background: "#6edd6a",
                     height: "100%",
                     borderRadius: 6,
                   }}
@@ -458,134 +529,171 @@ export default function UserDashboard() {
       </div>
 
       {/* MINI KALENDAR */}
-      <div
-        style={{
-          background: "white",
-          padding: 15,
-          borderRadius: 10,
-          marginBottom: 20,
-        }}
-      >
-        <h4>Kalendarski pregled svih odsustava</h4>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-          {events
-            .slice()
-            .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-            .slice(0, 10)
-            .map((e) => (
-              <div
-                key={e.id}
-                style={{
-                  padding: "5px 10px",
-                  borderRadius: 6,
-                  fontSize: 12,
-                  background:
-                    e.status === "APPROVED"
-                      ? "#bbf7d0"
-                      : e.status === "REJECTED"
-                      ? "#fecaca"
-                      : "#fde68a",
-                }}
-              >
-                {new Date(e.startDate).toLocaleDateString()}
-              </div>
-            ))}
+<div
+  style={{
+    background: "white",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+  }}
+>
+  <h4>Kalendarski pregled zakazanih odsustava</h4>
+  <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+    {events
+      .filter((e) => e.status === "APPROVED") // filtriranje samo odobrenih odsustava
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+      .slice(0, 10)
+      .map((e) => (
+        <div
+          key={e.id}
+          style={{
+            padding: "5px 10px",
+            borderRadius: 6,
+            fontSize: 12,
+            background: "#bbf7d0", // samo odobrena, pa direktno zelena
+          }}
+        >
+          {new Date(e.startDate).toLocaleDateString()}
         </div>
-      </div>
+      ))}
+  </div>
+</div>
 
       <div style={{ display: "flex", gap: 20 }}>
         {/* FORMA */}
-        <div
-          style={{
-            flex: 1,
-            background: "white",
-            padding: 20,
-            borderRadius: 10,
-          }}
-        >
-          <h3>Novi zahtev</h3>
+<div
+  style={{
+    background: "#b3e8aa",
+    padding: 20,       // smanjen padding
+    borderRadius: 10,
+    boxSizing: "border-box",
+    width: "100%",
+    maxWidth: 450,
+    margin: "20px auto",
+  }}
+>
+  <h3 style={{ textAlign: "center", marginBottom: 15 }}>Novi zahtev</h3>
 
-          <form onSubmit={handleSubmit}>
-            <select
-              value={newEvent.leaveTypeId}
-              onChange={(e) =>
-                setNewEvent((prev) => ({ ...prev, leaveTypeId: e.target.value }))
-              }
-              style={inputStyle}
-              required
-            >
-              <option value="">Tip odsustva</option>
-              {leaveTypes.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
+  <form
+    onSubmit={handleSubmit}
+    style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
+  >
+    {/* Tip odsustva */}
+    <select
+      value={newEvent.leaveTypeId}
+      onChange={(e) =>
+        setNewEvent((prev) => ({ ...prev, leaveTypeId: e.target.value }))
+      }
+      style={{
+        width: "100%",
+        padding: 8,       // manje paddinga
+        marginBottom: 10, // manja margina
+        borderRadius: 6,
+        border: "1px solid #ccc",
+        boxSizing: "border-box",
+      }}
+      required
+    >
+      <option value="">Tip odsustva</option>
+      {leaveTypes.map((t) => (
+        <option key={t.id} value={t.id}>
+          {t.name}
+        </option>
+      ))}
+    </select>
 
-            <input
-              type="date"
-              value={newEvent.startDate}
-              onChange={(e) =>
-                setNewEvent((prev) => ({ ...prev, startDate: e.target.value }))
-              }
-              style={inputStyle}
-              required
-            />
+    {/* Datumi */}
+    <input
+      type="date"
+      value={newEvent.startDate}
+      onChange={(e) =>
+        setNewEvent((prev) => ({ ...prev, startDate: e.target.value }))
+      }
+      style={{
+        width: "100%",
+        padding: 8,
+        marginBottom: 10,
+        borderRadius: 6,
+        border: "1px solid #ccc",
+        boxSizing: "border-box",
+      }}
+      required
+    />
 
-            <input
-              type="date"
-              value={newEvent.endDate}
-              onChange={(e) =>
-                setNewEvent((prev) => ({ ...prev, endDate: e.target.value }))
-              }
-              style={inputStyle}
-              required
-            />
+    <input
+      type="date"
+      value={newEvent.endDate}
+      onChange={(e) =>
+        setNewEvent((prev) => ({ ...prev, endDate: e.target.value }))
+      }
+      style={{
+        width: "100%",
+        padding: 8,
+        marginBottom: 10,
+        borderRadius: 6,
+        border: "1px solid #ccc",
+        boxSizing: "border-box",
+      }}
+      required
+    />
 
-            {requestedDays > 0 && (
-              <p>
-                Trajanje: <strong>{requestedDays} radnih dana</strong>
-              </p>
-            )}
+    {/* Trajanje */}
+    {requestedDays > 0 && (
+      <p style={{ marginBottom: 10, textAlign: "center" }}>
+        Trajanje: <strong>{requestedDays} radnih dana</strong>
+      </p>
+    )}
 
-            <textarea
-              value={newEvent.note}
-              onChange={(e) =>
-                setNewEvent((prev) => ({ ...prev, note: e.target.value }))
-              }
-              placeholder="Napomena"
-              style={inputStyle}
-            />
+    {/* Napomena */}
+    <textarea
+      value={newEvent.note}
+      onChange={(e) =>
+        setNewEvent((prev) => ({ ...prev, note: e.target.value }))
+      }
+      placeholder="Napomena"
+      style={{
+        width: "100%",
+        padding: 8,
+        marginBottom: 15,
+        borderRadius: 6,
+        border: "1px solid #ccc",
+        boxSizing: "border-box",
+        resize: "vertical",
+        height: 60,  // ograničena visina
+      }}
+    />
 
-            <button
-              type="submit"
-              style={{
-                width: "100%",
-                padding: 10,
-                background: colors.secondary,
-                color: "white",
-                border: "none",
-                borderRadius: 8,
-                cursor: "pointer",
-              }}
-            >
-              Pošalji zahtev
-            </button>
-          </form>
-        </div>
+    {/* Dugme */}
+    <button
+      type="submit"
+      style={{
+        width: "100%",
+        padding: 10,
+        background: colors.secondary,
+        color: "white",
+        border: "none",
+        borderRadius: 8,
+        cursor: "pointer",
+        fontSize: 16,
+      }}
+    >
+      Pošalji zahtev
+    </button>
+  </form>
+</div>
 
         {/* ODSUSTVA */}
         <div style={{ flex: 2 }}>
-          <h3>Moja odsustva</h3>
+          <h3>Moji zahtevi</h3>
 
           <select
             onChange={(e) => setFilter(e.target.value)}
             style={{ marginBottom: 10 }}
           >
-            <option value="ALL">Sva</option>
-            <option value="APPROVED">Odobrena</option>
+            <option value="ALL">Svi</option>
+            <option value="APPROVED">Odobreni</option>
             <option value="PENDING">Na čekanju</option>
-            <option value="REJECTED">Odbijena</option>
+            <option value="REJECTED">Odbijeni</option>
           </select>
 
           {filteredEvents.map((e) => (

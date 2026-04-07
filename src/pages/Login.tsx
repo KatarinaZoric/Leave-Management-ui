@@ -15,7 +15,7 @@ export default function Login() {
   setError("");
 
   try {
-    const data: { access_token: string; role: "ADMIN" | "EMPLOYEE" } =
+    const data: { access_token: string; role: "ADMIN" | "MANAGER" | "EMPLOYEE" } =
       await api.login(email, password);
 
     localStorage.setItem("token", data.access_token);
@@ -32,7 +32,11 @@ export default function Login() {
 
     if (data.role === "ADMIN") {
       navigate("/admin");
-    } else {
+    } 
+    else if (data.role === "MANAGER") {
+    navigate("/admin");
+    }
+    else {
       navigate("/user");
     }
   } catch (err: any) {
