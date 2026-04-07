@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prefer-const */
 /* eslint-disable no-empty */
 /* eslint-disable react-hooks/set-state-in-effect */
@@ -388,7 +389,7 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
           }}
         >
           <h3>Zahtevi za odsustvo</h3>
-          {pendingEvents.length === 0 && <p>Nema zahteva.</p>}
+          {pendingEvents.length === 0 && <p>Trenutno nema novih zahteva.</p>}
           {pendingEvents.map(e => (
             <div
               key={e.id}
@@ -413,75 +414,106 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
           ))}
         </div>
 
-        {/* USERS LIST */}
+       {/* USERS LIST */}
+<div
+  style={{
+    gridColumn: '1 / span 2',
+    background: '#fff',
+    padding: 20,
+    borderRadius: 10,
+    border: '2px solid #a0b4e0',
+    backgroundColor: '#e6ebf2',
+  }}
+>
+  <h3>Lista korisnika</h3>
+  <input
+    placeholder="Pretraži korisnika..."
+    onChange={e => setSearch(e.target.value)}
+    style={{
+      width: '100%',
+      padding: 10,
+      marginBottom: 15,
+      borderRadius: 8,
+      border: '1px solid #ccc',
+    }}
+  />
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(240px,1fr))',
+      gap: 15,
+    }}
+  >
+    {users
+      .filter(u =>
+        `${u.name} ${u.surname}`.toLowerCase().includes(search.toLowerCase())
+      )
+      .map(user => (
         <div
+          key={user.id}
           style={{
-            gridColumn: '1 / span 2',
-            background: '#fff',
-            padding: 20,
+            padding: 15,
             borderRadius: 10,
-            border: '2px solid #a0b4e0',
-            backgroundColor: '#e6ebf2',
+            cursor: 'pointer',
+            background: '#f7faff',
+            border: '1px solid #dde6f2',
           }}
         >
-          <h3>Lista korisnika</h3>
-          <input
-            placeholder="Pretraži korisnika..."
-            onChange={e => setSearch(e.target.value)}
-            style={{
-              width: '100%',
-              padding: 10,
-              marginBottom: 15,
-              borderRadius: 8,
-              border: '1px solid #ccc',
-            }}
-          />
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(240px,1fr))',
-              gap: 15,
-            }}
-          >
-            {users
-              .filter(u =>
-                `${u.name} ${u.surname}`
-                  .toLowerCase()
-                  .includes(search.toLowerCase())
-              )
-              .map(user => (
-                <div
-                  key={user.id}
-                  style={{
-                    padding: 15,
-                    borderRadius: 10,
-                    cursor: 'pointer',
-                    background: '#f7faff',
-                    border: '1px solid #dde6f2',
-                  }}
-                >
-                  <strong>{user.name} {user.surname}</strong>
-                  <p>{user.email}</p>
-                  <p>Preostali dani: {user.remainingDays}</p>
-                  <button
-                    onClick={() => navigate(`/admin/user/${user.id}/pdf`)}
-                    style={{ marginRight: 5 }}
-                  >
-                    Pregled
-                  </button>
-                  <button
-                    onClick={() => {
-                      setBalanceUserId(user.id);
-                      setBalanceModalOpen(true);
+          <strong>{user.name} {user.surname}</strong>
+          <p>{user.email}</p>
+
+          {/* Pregled preostalih dana sa progresom */}
+          {user.remainingDays ? (
+            Object.entries(user.remainingDays).map(([year, remaining]) => {
+              const total = 20; // pretpostavljeni ukupni dani godišnje
+              const remainingDays = Number(remaining);
+              const used = total - remainingDays;
+              const percent = (used / total) * 100;
+
+              return (
+                <div key={year} style={{ marginBottom: 8 }}>
+                  <strong>
+                    Godina {year} - Preostalo: {remainingDays} dana
+                  </strong>
+                  <div
+                    style={{
+                      height: 10,
+                      background: "#ddd",
+                      borderRadius: 5,
+                      marginTop: 4,
                     }}
                   >
-                    Dodaj balans
-                  </button>
+                    <div
+                      style={{
+                        width: `${percent}%`,
+                        background: "#6edd6a",
+                        height: "100%",
+                        borderRadius: 5,
+                      }}
+                    />
+                  </div>
                 </div>
-              ))}
+              );
+            })
+          ) : (
+            <p>Nema podataka o preostalim danima</p>
+          )}
+
+          {/* Dugmad */}
+          <div style={{ marginTop: 10 }}>
+            <button
+              onClick={() => {
+                setBalanceUserId(user.id);
+                setBalanceModalOpen(true);
+              }}
+            >
+              Dodaj balans
+            </button>
           </div>
         </div>
-
+      ))}
+  </div>
+</div>
         {/* MONTHLY VIEW */}
         <div
           style={{
@@ -493,7 +525,7 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
             marginTop: 20,
           }}
         >
-          <h3>Mesecni pregled odsustava</h3>
+          <h3>Mesečni pregled odsustava</h3>
 
           {/* Lista meseci */}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 15 }}>
@@ -518,61 +550,91 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
             })}
           </div>
 
-          {/* Prikaz tabele */}
-          {selectedMonth !== null && (
-            <div style={{ overflowX: 'auto', maxHeight: 400 }}>
-              <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-                <thead>
-                  <tr>
-                    <th style={{ border: '1px solid #ccc', padding: 5, background: '#e6ebf2' }}>
-                      Korisnik
-                    </th>
-                    {Array.from({ length: daysInMonth(selectedMonth, currentYear) }, (_, i) => (
-                      <th
-                        key={i}
-                        style={{
-                          border: '1px solid #ccc',
-                          padding: 5,
-                          width: 25,
-                          textAlign: 'center',
-                          background: '#f3f3f3',
-                        }}
-                      >
-                        {i + 1}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map(user => (
-                    <tr key={user.id}>
-                      <td style={{ border: '1px solid #ccc', padding: 5 }}>{user.name} {user.surname}</td>
-                      {Array.from({ length: daysInMonth(selectedMonth, currentYear) }, (_, dayIndex) => {
-                        const dayDate = new Date(currentYear, selectedMonth, dayIndex + 1);
-                        const isAbsent = events.some(
-                          e =>
-                            e.user.name + ' ' + e.user.surname === user.name + ' ' + user.surname &&
-                            new Date(e.startDate) <= dayDate &&
-                            new Date(e.endDate) >= dayDate
-                        );
-                        return (
-                          <td
-                            key={dayIndex}
-                            style={{
-                              border: '1px solid #ccc',
-                              width: 25,
-                              height: 25,
-                              backgroundColor: isAbsent ? '#ccc' : '#fff',
-                            }}
-                          />
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+      {/* Prikaz tabele */}
+{selectedMonth !== null && (
+  <div style={{ overflowX: 'auto', maxHeight: 400 }}>
+    <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+      <thead>
+        <tr>
+          <th style={{ border: '1px solid #ccc', padding: 5, background: '#e6ebf2' }}>
+            Korisnik
+          </th>
+          {Array.from({ length: daysInMonth(selectedMonth, currentYear) }, (_, i) => (
+            <th
+              key={i}
+              style={{
+                border: '1px solid #ccc',
+                padding: 5,
+                width: 25,
+                textAlign: 'center',
+                background: '#f3f3f3',
+              }}
+            >
+              {i + 1}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {users.map(user => (
+          <tr key={user.id}>
+            <td style={{ border: '1px solid #ccc', padding: 5 }}>{user.name} {user.surname}</td>
+            {Array.from({ length: daysInMonth(selectedMonth, currentYear) }, (_, dayIndex) => {
+              const dayDate = new Date(currentYear, selectedMonth, dayIndex + 1);
+              const dayOfWeek = dayDate.getDay();
+
+              // Vikendi crni
+              if (dayOfWeek === 0 || dayOfWeek === 6) {
+                return (
+                  <td
+                    key={dayIndex}
+                    style={{
+                      border: '1px solid #ccc',
+                      width: 25,
+                      height: 25,
+                      backgroundColor: '#ccc', // crni vikend
+                    }}
+                  />
+                );
+              }
+
+              // Funkcija za proveru odsustva
+              const isSameDayOrBetween = (start: Date, end: Date, day: Date) => {
+                const s = new Date(start);
+                const e = new Date(end);
+                const d = new Date(day);
+
+                s.setHours(0, 0, 0, 0);
+                e.setHours(0, 0, 0, 0);
+                d.setHours(0, 0, 0, 0);
+
+                return s <= d && d <= e;
+              };
+
+              const isAbsent = events.some(
+                e =>
+                  e.user.name + ' ' + e.user.surname === user.name + ' ' + user.surname &&
+                  isSameDayOrBetween(new Date(e.startDate), new Date(e.endDate), dayDate)
+              );
+
+              return (
+                <td
+                  key={dayIndex}
+                  style={{
+                    border: '1px solid #ccc',
+                    width: 25,
+                    height: 25,
+                    backgroundColor: isAbsent ? '#ed3f3f' : '#fff', // sivi odsustvo
+                  }}
+                />
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
         </div>
       </div>
 
