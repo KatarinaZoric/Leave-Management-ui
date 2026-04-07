@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 /* eslint-disable no-empty */
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -74,6 +75,12 @@ export default function AdminDashboard() {
 
   const [validUntilDate, setValidUntilDate] = useState<string>('');
 
+  /* === MONTHLY VIEW STATE === */
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const currentYear = new Date().getFullYear();
+  const daysInMonth = (month: number, year: number) =>
+    new Date(year, month + 1, 0).getDate();
+
   /* ================= USER INFO ================= */
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -86,12 +93,66 @@ export default function AdminDashboard() {
     } catch {}
   }, []);
 
+  /* ================= WORKDAY EVENT SPLIT ================= */
+
+const isWeekend = (date: Date) => {
+  const d = date.getDay();
+  return d === 0 || d === 6;
+};
+
+const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
+  const result: CalendarEvent[] = [];
+
+  let current = new Date(event.start);
+  const end = new Date(event.end);
+
+  current.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+
+  let rangeStart: Date | null = null;
+
+  while (current <= end) {
+    const weekend = isWeekend(current);
+
+    if (!weekend && !rangeStart) {
+      // počinje nova lenta
+      rangeStart = new Date(current);
+    }
+
+    if ((weekend || current.getTime() === end.getTime()) && rangeStart) {
+      // završavamo lentu
+      const rangeEnd = weekend
+        ? new Date(current.getTime() - 86400000)
+        : new Date(current);
+
+      const start = new Date(rangeStart);
+      start.setHours(8, 0, 0);
+
+      const finish = new Date(rangeEnd);
+      finish.setHours(16, 0, 0);
+
+      result.push({
+        ...event,
+        start,
+        end: finish,
+      });
+
+      rangeStart = null;
+    }
+
+    current.setDate(current.getDate() + 1);
+  }
+
+  return result;
+};
+
   /* ================= FETCH EVENTS ================= */
   const fetchEvents = async () => {
-    const data: LeaveEventResponse[] = await api.getLeaveEvents();
-    setEvents(data);
+  const data: LeaveEventResponse[] = await api.getLeaveEvents();
+  setEvents(data);
 
-    const formatted: CalendarEvent[] = data.map(e => ({
+  const formatted: CalendarEvent[] = data.flatMap(e =>
+    splitEventByWorkdays({
       id: e.id,
       title: `${e.user.name} ${e.user.surname} - ${e.leaveType.name}`,
       start: new Date(e.startDate),
@@ -99,10 +160,11 @@ export default function AdminDashboard() {
       color: e.leaveType.color,
       userName: e.user.name + ' ' + e.user.surname,
       note: e.note,
-    }));
+    })
+  );
 
-    setCalendarEvents(formatted);
-  };
+  setCalendarEvents(formatted);
+};
 
   /* ================= FETCH USERS ================= */
   const fetchUsers = async () => {
@@ -110,13 +172,13 @@ export default function AdminDashboard() {
     setUsers(data);
   };
 
-useEffect(() => {
-  if (balanceYear) {
-    const nextYear = balanceYear + 1;
-    const dateStr = `${nextYear}-06-01`; // 1. jun naredne godine
-    setValidUntilDate(dateStr);
-  }
-}, [balanceYear]);
+  useEffect(() => {
+    if (balanceYear) {
+      const nextYear = balanceYear + 1;
+      const dateStr = `${nextYear}-06-01`; // 1. jun naredne godine
+      setValidUntilDate(dateStr);
+    }
+  }, [balanceYear]);
 
   useEffect(() => {
     fetchEvents();
@@ -144,28 +206,24 @@ useEffect(() => {
   };
 
   const addBalance = async () => {
-  if (!balanceUserId || newBalance <= 0) {
-    alert('Unesite broj dana za balans');
-    return;
-  }
+    if (!balanceUserId || newBalance <= 0) {
+      alert('Unesite broj dana za balans');
+      return;
+    }
 
-  try {
-    // SLANJE SAMO BALANCE YEAR I NEW BALANCE
-    await api.updateUserBalance(balanceUserId, newBalance, balanceYear);
-
-    await fetchUsers(); // osvežava listu korisnika sa novim balansima
-
-    setBalanceModalOpen(false);
-    setNewBalance(0);
-    setBalanceYear(new Date().getFullYear());
-    setBalanceUserId(null);
-
-    alert('Balans uspešno dodat!');
-  } catch (err: any) {
-    console.error(err);
-    alert(err.message || 'Greška prilikom dodavanja balansa.');
-  }
-};
+    try {
+      await api.updateUserBalance(balanceUserId, newBalance, balanceYear);
+      await fetchUsers(); // refresh users list
+      setBalanceModalOpen(false);
+      setNewBalance(0);
+      setBalanceYear(new Date().getFullYear());
+      setBalanceUserId(null);
+      alert('Balans uspešno dodat!');
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Greška prilikom dodavanja balansa.');
+    }
+  };
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -184,27 +242,37 @@ useEffect(() => {
   });
 
   const dayPropGetter = (date: Date) => {
-    const today = new Date();
-    if (date < today)
-      return {
-        style: {
-          backgroundColor: '#f3f3f3',
-          pointerEvents: 'none',
-        },
-      };
-    return { style: {} };
-  };
+  const day = date.getDay();
+
+  const isWeekend = day === 0 || day === 6;
+
+  if (isWeekend) {
+    return {
+      style: {
+        backgroundColor: '#7796f4', // SIVI vikendi
+      },
+    };
+  }
+
+  return { style: {} };
+};
 
   const handleSelectSlot = (slotInfo: SlotInfo) => {
-    const start = new Date(slotInfo.start);
-    const end = new Date(slotInfo.end);
+  const clickedDate = new Date(slotInfo.start);
+  clickedDate.setHours(0, 0, 0, 0);
 
-    const dayEvents = calendarEvents.filter(
-      e => e.start <= end && e.end >= start
-    );
+  const dayEvents = calendarEvents.filter(event => {
+    const start = new Date(event.start);
+    const end = new Date(event.end);
 
-    setSelectedDateEvents(dayEvents);
-  };
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    return clickedDate >= start && clickedDate <= end;
+  });
+
+  setSelectedDateEvents(dayEvents);
+};
 
   const EventComponent = ({ event }: { event: CalendarEvent }) => (
     <div onClick={() => setSelectedDateEvents([event])}>{event.title}</div>
@@ -239,43 +307,40 @@ useEffect(() => {
     >
       {/* HEADER */}
       <div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    background: "#d9e8fb",
-    padding: 20,
-    borderRadius: 10,
-    marginBottom: 20,
-    minHeight: 120, // dovoljno visine da dugme može biti pri dnu
-  }}
->
-  {/* Leva strana sa logom i tekstom */}
-  <div style={{ display: "flex", gap: 15, alignItems: "center" }}>
-    <img src={logoImg} width={200} style={{ borderRadius: 5 }} />
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          background: "#d9e8fb",
+          padding: 20,
+          borderRadius: 10,
+          marginBottom: 20,
+          minHeight: 120,
+        }}
+      >
+        <div style={{ display: "flex", gap: 15, alignItems: "center" }}>
+          <img src={logoImg} width={200} style={{ borderRadius: 5 }} />
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <h2 style={{ margin: 0 }}>Evidencija odsustava</h2>
+            <p style={{ margin: 0 }}>{userName}</p>
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <button
+            onClick={logout}
+            style={{
+              backgroundColor: "#0d5fb0",
+              color: "#fff",
+              padding: "10px 20px",
+              border: "none",
+              borderRadius: 5,
+              cursor: "pointer",
+            }}
+          >
+            Odjavi se
+          </button>
+        </div>
+      </div>
 
-    <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-      <h2 style={{ margin: 0 }}>Evidencija odsustava</h2>
-      <p style={{ margin: 0 }}>{userName}</p>
-    </div>
-  </div>
-
-  {/* Desna strana dugmeta */}
-  <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-    <button
-      onClick={logout}
-      style={{
-        backgroundColor: "#0d5fb0",
-        color: "#fff",
-        padding: "10px 20px",
-        border: "none",
-        borderRadius: 5,
-        cursor: "pointer",
-      }}
-    >
-      Odjavi se
-    </button>
-  </div>
-</div>
       {/* ENTERPRISE GRID */}
       <div
         style={{
@@ -324,58 +389,38 @@ useEffect(() => {
         >
           <h3>Zahtevi za odsustvo</h3>
           {pendingEvents.length === 0 && <p>Nema zahteva.</p>}
-
           {pendingEvents.map(e => (
-  <div
-    key={e.id}
-    style={{
-      background: '#fff',
-      padding: 10,
-      borderRadius: 8,
-      marginBottom: 10,
-    }}
-  >
-    <strong>
-      {e.user.name} {e.user.surname}
-    </strong>
-
-    {/* Tip odsustva */}
-    <p>
-      <strong>{e.leaveType.name}</strong>
-    </p>
-
-    {/* Napomena ako postoji */}
-    {e.note && (
-      <p>
-        <strong>Napomena:</strong> {e.note}
-      </p>
-    )}
-
-    {/* Datumi */}
-    <p>
-      {new Date(e.startDate).toLocaleDateString()} →{' '}
-      {new Date(e.endDate).toLocaleDateString()}
-    </p>
-
-    {/* Dugmad samo za admina */}
-    {role === 'ADMIN' && (
-      <>
-        <button onClick={() => approve(e.id)}>Odobri</button>
-        <button onClick={() => openRejectModal(e.id)}>Odbij</button>
-      </>
-    )}
-  </div>
-))}
+            <div
+              key={e.id}
+              style={{
+                background: '#fff',
+                padding: 10,
+                borderRadius: 8,
+                marginBottom: 10,
+              }}
+            >
+              <strong>{e.user.name} {e.user.surname}</strong>
+              <p><strong>{e.leaveType.name}</strong></p>
+              {e.note && <p><strong>Napomena:</strong> {e.note}</p>}
+              <p>{new Date(e.startDate).toLocaleDateString()} → {new Date(e.endDate).toLocaleDateString()}</p>
+              {role === 'ADMIN' && (
+                <>
+                  <button onClick={() => approve(e.id)}>Odobri</button>
+                  <button onClick={() => openRejectModal(e.id)}>Odbij</button>
+                </>
+              )}
+            </div>
+          ))}
         </div>
 
-        {/* USERS LIST BELOW */}
+        {/* USERS LIST */}
         <div
           style={{
             gridColumn: '1 / span 2',
             background: '#fff',
             padding: 20,
             borderRadius: 10,
-            border: '2px solid #a0b4e0', // samo border
+            border: '2px solid #a0b4e0',
             backgroundColor: '#e6ebf2',
           }}
         >
@@ -415,12 +460,9 @@ useEffect(() => {
                     border: '1px solid #dde6f2',
                   }}
                 >
-                  <strong>
-                    {user.name} {user.surname}
-                  </strong>
+                  <strong>{user.name} {user.surname}</strong>
                   <p>{user.email}</p>
                   <p>Preostali dani: {user.remainingDays}</p>
-
                   <button
                     onClick={() => navigate(`/admin/user/${user.id}/pdf`)}
                     style={{ marginRight: 5 }}
@@ -439,19 +481,146 @@ useEffect(() => {
               ))}
           </div>
         </div>
+
+        {/* MONTHLY VIEW */}
+        <div
+          style={{
+            gridColumn: '1 / span 2',
+            background: '#fff',
+            padding: 20,
+            borderRadius: 10,
+            border: '2px solid #a0b4e0',
+            marginTop: 20,
+          }}
+        >
+          <h3>Mesecni pregled odsustava</h3>
+
+          {/* Lista meseci */}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 15 }}>
+            {Array.from({ length: 12 }, (_, i) => i).map(monthIndex => {
+              const monthName = new Date(0, monthIndex).toLocaleString('sr-Latn', { month: 'long' });
+              return (
+                <button
+                  key={monthIndex}
+                  onClick={() => setSelectedMonth(monthIndex)}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: 5,
+                    border: '1px solid #ccc',
+                    backgroundColor: selectedMonth === monthIndex ? '#0077cc' : '#f3f3f3',
+                    color: selectedMonth === monthIndex ? '#fff' : '#000',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {monthName}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Prikaz tabele */}
+          {selectedMonth !== null && (
+            <div style={{ overflowX: 'auto', maxHeight: 400 }}>
+              <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                <thead>
+                  <tr>
+                    <th style={{ border: '1px solid #ccc', padding: 5, background: '#e6ebf2' }}>
+                      Korisnik
+                    </th>
+                    {Array.from({ length: daysInMonth(selectedMonth, currentYear) }, (_, i) => (
+                      <th
+                        key={i}
+                        style={{
+                          border: '1px solid #ccc',
+                          padding: 5,
+                          width: 25,
+                          textAlign: 'center',
+                          background: '#f3f3f3',
+                        }}
+                      >
+                        {i + 1}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map(user => (
+                    <tr key={user.id}>
+                      <td style={{ border: '1px solid #ccc', padding: 5 }}>{user.name} {user.surname}</td>
+                      {Array.from({ length: daysInMonth(selectedMonth, currentYear) }, (_, dayIndex) => {
+                        const dayDate = new Date(currentYear, selectedMonth, dayIndex + 1);
+                        const isAbsent = events.some(
+                          e =>
+                            e.user.name + ' ' + e.user.surname === user.name + ' ' + user.surname &&
+                            new Date(e.startDate) <= dayDate &&
+                            new Date(e.endDate) >= dayDate
+                        );
+                        return (
+                          <td
+                            key={dayIndex}
+                            style={{
+                              border: '1px solid #ccc',
+                              width: 25,
+                              height: 25,
+                              backgroundColor: isAbsent ? '#ccc' : '#fff',
+                            }}
+                          />
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* MODAL ODSUSTVA */}
+      {/* MODALS: selectedDateEvents, balanceModalOpen, rejectModalOpen */}
+      {/* Selected Date Events */}
       {selectedDateEvents && (
         <div
           onClick={() => setSelectedDateEvents(null)}
           style={{
+  position: 'fixed',
+  inset: 0,
+  background: 'rgba(0,0,0,.5)',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  zIndex: 999999, 
+}}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', padding: 20, borderRadius: 10 }}
+          >
+            <h3>Odsustva dana</h3>
+            {selectedDateEvents.map(e => (
+              <div key={e.id}>
+                <strong>{e.userName}</strong>
+                <p>{e.start.toLocaleDateString()} → {e.end.toLocaleDateString()}</p>
+              </div>
+            ))}
+            <button onClick={() => setSelectedDateEvents(null)} style={{ marginTop: 10 }}>
+              Zatvori
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* BALANCE MODAL */}
+      {balanceModalOpen && (
+        <div
+          onClick={() => setBalanceModalOpen(false)}
+          style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,.5)',
+            background: 'rgba(0,0,0,0.5)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
+            zIndex: 9999,
           }}
         >
           <div
@@ -460,106 +629,44 @@ useEffect(() => {
               background: '#fff',
               padding: 20,
               borderRadius: 10,
+              width: 350,
+              maxWidth: '90%',
+              zIndex: 10000,
             }}
           >
-            <h3>Odsustva dana</h3>
-
-            {selectedDateEvents.map(e => (
-              <div key={e.id}>
-                <strong>{e.userName}</strong>
-                <p>
-                  {e.start.toLocaleDateString()} →{' '}
-                  {e.end.toLocaleDateString()}
-                </p>
-              </div>
-            ))}
-
-            <button
-              onClick={() => setSelectedDateEvents(null)}
-              style={{ marginTop: 10 }}
-            >
-              Zatvori
-            </button>
+            <h3>Unesi novi balans dana</h3>
+            <input
+              type="number"
+              value={newBalance}
+              onChange={e => setNewBalance(parseInt(e.target.value))}
+              placeholder="Broj dana"
+              style={{ marginBottom: 10, width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
+            />
+            <input
+              type="number"
+              value={balanceYear}
+              onChange={e => setBalanceYear(parseInt(e.target.value))}
+              placeholder="Godina"
+              style={{ marginBottom: 10, width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
+            />
+            <div style={{ marginBottom: 10 }}>
+              <label>Validno do:</label>
+              <input
+                type="text"
+                value={validUntilDate}
+                readOnly
+                style={{ width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc', backgroundColor: '#f3f3f3' }}
+              />
+            </div>
+            <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={addBalance}>Sačuvaj</button>
+              <button onClick={() => setBalanceModalOpen(false)} style={{ marginLeft: 5 }}>
+                Zatvori
+              </button>
+            </div>
           </div>
         </div>
       )}
-
-      {/* BALANCE MODAL */}
-      {/* BALANCE MODAL */}
-{balanceModalOpen && (
-  <div
-    onClick={() => setBalanceModalOpen(false)}
-    style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 9999,
-    }}
-  >
-    <div
-      onClick={e => e.stopPropagation()}
-      style={{
-        background: '#fff',
-        padding: 20,
-        borderRadius: 10,
-        width: 350,
-        maxWidth: '90%',
-        zIndex: 10000,
-      }}
-    >
-      <h3>Unesi novi balans dana</h3>
-
-      {/* Broj dana */}
-      <input
-        type="number"
-        value={newBalance}
-        onChange={e => setNewBalance(parseInt(e.target.value))}
-        placeholder="Broj dana"
-        style={{ marginBottom: 10, width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
-      />
-
-      {/* Godina */}
-      <input
-        type="number"
-        value={balanceYear}
-        onChange={e => setBalanceYear(parseInt(e.target.value))}
-        placeholder="Godina"
-        style={{ marginBottom: 10, width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
-      />
-
-      {/* Automatski validUntil */}
-      <div style={{ marginBottom: 10 }}>
-  <label>Validno do:</label>
-  <input
-    type="text"
-    value={validUntilDate} // samo informacija
-    readOnly
-    style={{
-      width: '100%',
-      padding: 8,
-      borderRadius: 6,
-      border: '1px solid #ccc',
-      backgroundColor: '#f3f3f3',
-    }}
-  />
-</div>
-
-      {/* Dugmad */}
-      <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
-        <button onClick={addBalance}>Sačuvaj</button>
-        <button
-          onClick={() => setBalanceModalOpen(false)}
-          style={{ marginLeft: 5 }}
-        >
-          Zatvori
-        </button>
-      </div>
-    </div>
-  </div>
-)}
 
       {/* REJECT MODAL */}
       {rejectModalOpen && (
