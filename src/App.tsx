@@ -1,19 +1,20 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
-import UserDashboard from "./pages/UserDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import UserDashboard from "./pages/UserDashboard";
 
-function App() {
-  return (
-    <Router>
+import "./index.css";
+
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <BrowserRouter basename="/leave-management">
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/user" element={<UserDashboard />} />
-        <Route path="/admin/user/:id" element={<AdminUserPage />} />
       </Routes>
-    </Router>
-  );
-}
-
-export default App;
+    </BrowserRouter>
+  </React.StrictMode>
+);

@@ -66,13 +66,14 @@ export default function UserDashboard() {
     secondary: "#3b82f6",
   };
 
-  const inputStyle = {
+  /*const inputStyle = {
     width: "100%",
     padding: 10,
     marginBottom: 10,
     borderRadius: 8,
     border: "1px solid #cbd5f5",
   };
+  */
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -238,6 +239,18 @@ export default function UserDashboard() {
     filter === "ALL"
       ? events
       : events.filter((e) => e.status === filter);
+
+      const cancelLeave = async (id: string) => {
+  if (!confirm("Da li želiš da otkažeš odsustvo?")) return;
+
+  try {
+    await api.cancelLeave(id);
+    fetchData();
+  } catch (err) {
+    console.error(err);
+    alert("Greška pri otkazivanju odsustva");
+  }
+};
 
   return (
     <div
@@ -733,6 +746,23 @@ export default function UserDashboard() {
         <strong>Napomena:</strong> {e.note}
       </p>
     )}
+
+    {(e.status === "PENDING" || e.status === "APPROVED") && (
+  <button
+    onClick={() => cancelLeave(e.id)}
+    style={{
+      marginTop: 10,
+      padding: "6px 10px",
+      borderRadius: 6,
+      border: "none",
+      background: "#ef4444",
+      color: "#fff",
+      cursor: "pointer",
+    }}
+  >
+    Otkaži
+  </button>
+)}
   </div>
 ))}
         </div>

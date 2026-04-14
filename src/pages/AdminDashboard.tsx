@@ -11,7 +11,6 @@ import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { api } from '../services/api';
 import logoImg from '../assets/archive_default_photo.jpg';
-import { useNavigate } from 'react-router-dom';
 
 moment.locale('sr');
 const localizer = momentLocalizer(moment);
@@ -49,7 +48,7 @@ type CalendarEvent = {
 /* ================= COMPONENT ================= */
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
+  //const navigate = useNavigate();
 
   const [events, setEvents] = useState<LeaveEventResponse[]>([]);
   const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
@@ -150,7 +149,9 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
   const data: LeaveEventResponse[] = await api.getLeaveEvents();
   setEvents(data);
 
-  const formatted: CalendarEvent[] = data.flatMap(e =>
+  const filteredData = data.filter(e => e.status !== 'CANCELLED');
+
+  const formatted: CalendarEvent[] = filteredData.flatMap(e =>
     splitEventByWorkdays({
       id: e.id,
       title: `${e.user.name} ${e.user.surname} - ${e.leaveType.name}`,
@@ -554,6 +555,7 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
           </div>
 
       {/* Prikaz tabele */}
+{/* Prikaz tabele */}
 {selectedMonth !== null && (
   <div style={{ overflowX: 'auto', maxHeight: 400 }}>
     <table style={{ borderCollapse: 'collapse', width: '100%' }}>
@@ -562,85 +564,132 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
           <th style={{ border: '1px solid #ccc', padding: 5, background: '#e6ebf2' }}>
             Korisnik
           </th>
-          {Array.from({ length: daysInMonth(selectedMonth, currentYear) }, (_, i) => (
-            <th
-              key={i}
-              style={{
-                border: '1px solid #ccc',
-                padding: 5,
-                width: 25,
-                textAlign: 'center',
-                background: '#f3f3f3',
-              }}
-            >
-              {i + 1}
-            </th>
-          ))}
+
+          {Array.from(
+            { length: daysInMonth(selectedMonth, currentYear) },
+            (_, i) => (
+              <th
+                key={i}
+                style={{
+                  border: '1px solid #ccc',
+                  padding: 5,
+                  width: 25,
+                  textAlign: 'center',
+                  background: '#f3f3f3',
+                }}
+              >
+                {i + 1}
+              </th>
+            )
+          )}
         </tr>
       </thead>
+
       <tbody>
         {users.map(user => (
           <tr key={user.id}>
-            <td style={{ border: '1px solid #ccc', padding: 5 }}>{user.name} {user.surname}</td>
-            {Array.from({ length: daysInMonth(selectedMonth, currentYear) }, (_, dayIndex) => {
-              const dayDate = new Date(currentYear, selectedMonth, dayIndex + 1);
-              const dayOfWeek = dayDate.getDay();
+            <td style={{ border: '1px solid #ccc', padding: 5 }}>
+              {user.name} {user.surname}
+            </td>
 
-              // Vikendi crni
-              if (dayOfWeek === 0 || dayOfWeek === 6) {
+            {Array.from(
+              { length: daysInMonth(selectedMonth, currentYear) },
+              (_, dayIndex) => {
+                const dayDate = new Date(
+                  currentYear,
+                  selectedMonth,
+                  dayIndex + 1
+                );
+
+                const dayOfWeek = dayDate.getDay();
+
+                /* === VIKEND === */
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                  return (
+                    <td
+                      key={dayIndex}
+                      style={{
+                        border: '1px solid #ccc',
+                        width: 25,
+                        height: 25,
+                        backgroundColor: '#ccc',
+                      }}
+                    />
+                  );
+                }
+
+                /* === PROVERA DATUMA === */
+                const isSameDayOrBetween = (
+                  start: Date,
+                  end: Date,
+                  day: Date
+                ) => {
+                  const s = new Date(start);
+                  const e = new Date(end);
+                  const d = new Date(day);
+
+                  s.setHours(0, 0, 0, 0);
+                  e.setHours(0, 0, 0, 0);
+                  d.setHours(0, 0, 0, 0);
+
+                  return s <= d && d <= e;
+                };
+
+                /* === PRONALAZI ODSUSTVO === */
+                const absenceEvent = events
+  .filter(e => e.status !== 'CANCELLED')
+  .find(
+                  e =>
+                    e.user.name === user.name &&
+                    e.user.surname === user.surname &&
+                    isSameDayOrBetween(
+                      new Date(e.startDate),
+                      new Date(e.endDate),
+                      dayDate
+                    )
+                );
+
+                const leaveType =
+                  absenceEvent?.leaveType?.name?.toLowerCase();
+
+                /* === BOJE === */
+                let backgroundColor = '#fff';
+
+                if (leaveType) {
+                  if (leaveType.includes('bol')) {
+                    backgroundColor = '#efe118'; // 🟡 bolovanje
+                  } else if (
+                    leaveType.includes('godi') ||
+                    leaveType.includes('slobod')
+                  ) {
+                    backgroundColor = '#e91414'; // 🔴 godišnji/slobodan
+                  }
+                }
+
                 return (
                   <td
                     key={dayIndex}
+                    title={absenceEvent?.leaveType?.name || ''}
                     style={{
                       border: '1px solid #ccc',
                       width: 25,
                       height: 25,
-                      backgroundColor: '#ccc', // crni vikend
+                      backgroundColor,
+                      cursor: absenceEvent ? 'pointer' : 'default',
                     }}
                   />
                 );
               }
-
-              // Funkcija za proveru odsustva
-              const isSameDayOrBetween = (start: Date, end: Date, day: Date) => {
-                const s = new Date(start);
-                const e = new Date(end);
-                const d = new Date(day);
-
-                s.setHours(0, 0, 0, 0);
-                e.setHours(0, 0, 0, 0);
-                d.setHours(0, 0, 0, 0);
-
-                return s <= d && d <= e;
-              };
-
-              const isAbsent = events.some(
-                e =>
-                  e.user.name + ' ' + e.user.surname === user.name + ' ' + user.surname &&
-                  isSameDayOrBetween(new Date(e.startDate), new Date(e.endDate), dayDate)
-              );
-
-              return (
-                <td
-                  key={dayIndex}
-                  style={{
-                    border: '1px solid #ccc',
-                    width: 25,
-                    height: 25,
-                    backgroundColor: isAbsent ? '#ed3f3f' : '#fff', // sivi odsustvo
-                  }}
-                />
-              );
-            })}
+            )}
           </tr>
         ))}
       </tbody>
     </table>
   </div>
 )}
-        </div>
-      </div>
 
+  </div>
+    </div>
       {/* MODALS: selectedDateEvents, balanceModalOpen, rejectModalOpen */}
       {/* Selected Date Events */}
       {selectedDateEvents && (

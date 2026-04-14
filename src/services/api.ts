@@ -191,4 +191,10 @@ getUsersWithBalances: async () => {
   }));
 },
 
+cancelLeave: (id: string) =>
+  fetch(`${BASE_URL}/leave-events/${id}/cancel`, {
+    method: "PATCH",
+    headers: getHeaders(),
+  }).then(handleResponse),
+
 };
