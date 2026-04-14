@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = "https://leave-management-gd8p.onrender.com";
 
 const getHeaders = () => {
   const token = localStorage.getItem("token");
