@@ -143,11 +143,8 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
 
   return result;
 };
-
-  /* ================= FETCH EVENTS ================= */
-  const fetchEvents = async () => {
+const fetchEvents = async () => {
   const data: LeaveEventResponse[] = await api.getLeaveEvents();
-  setEvents(data);
 
   const filteredData = data.filter(e => e.status !== 'CANCELLED');
 
@@ -163,6 +160,7 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
     })
   );
 
+  setEvents(filteredData);
   setCalendarEvents(formatted);
 };
 
@@ -361,6 +359,7 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
           }}
         >
           <Calendar
+            key={calendarEvents.length}
             localizer={localizer}
             events={calendarEvents}
             startAccessor="start"
@@ -657,12 +656,12 @@ const splitEventByWorkdays = (event: CalendarEvent): CalendarEvent[] => {
 
                 if (leaveType) {
                   if (leaveType.includes('bol')) {
-                    backgroundColor = '#efe118'; // 🟡 bolovanje
+                    backgroundColor = '#e91414'; // 🟡 bolovanje
                   } else if (
                     leaveType.includes('godi') ||
                     leaveType.includes('slobod')
                   ) {
-                    backgroundColor = '#e91414'; // 🔴 godišnji/slobodan
+                    backgroundColor = '#3b78d2'; // 🔴 godišnji/slobodan
                   }
                 }
 
