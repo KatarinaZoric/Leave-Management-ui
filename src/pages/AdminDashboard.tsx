@@ -88,7 +88,7 @@ export default function AdminDashboard() {
 
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      setUserName([payload.name, payload.surname].filter(Boolean).join(' '));
+      setUserName(payload.name);
       setRole(payload.role || 'EMPLOYEE'); 
     } catch {}
   }, []);
@@ -185,9 +185,10 @@ const fetchEvents = async () => {
 
   /* ================= ACTIONS ================= */
   const approve = async (id: string) => {
-    await api.approveLeave(id);
-    fetchEvents();
-  };
+  await api.approveLeave(id);
+  await fetchEvents();
+  await fetchUsers();
+};
 
   const openRejectModal = (id: string) => {
     setRejectLeaveId(id);
@@ -199,6 +200,7 @@ const fetchEvents = async () => {
     await api.rejectLeave(rejectLeaveId, rejectReason);
     alert('Razlog odbijanja je poslat korisniku!');
     fetchEvents();
+    fetchUsers(); 
     setRejectModalOpen(false);
     setRejectReason('');
   };
