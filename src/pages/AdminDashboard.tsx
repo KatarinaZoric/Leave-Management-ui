@@ -88,6 +88,14 @@ export default function AdminDashboard() {
 
   const [validUntilDate, setValidUntilDate] = useState<string>('');
 
+  //Promeni lozinku
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+  });
+
   /* === MONTHLY VIEW STATE === */
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const currentYear = new Date().getFullYear();
@@ -347,6 +355,21 @@ const fetchEvents = async () => {
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+          <button
+  onClick={() => setPasswordModalOpen(true)}
+  style={{
+    backgroundColor: "#ffb020",
+    color: "#000",
+    padding: "10px 20px",
+    border: "none",
+    borderRadius: 5,
+    cursor: "pointer",
+    marginBottom: 8,
+    fontWeight: 'bold',
+  }}
+>
+  Promeni lozinku
+</button>
           <button
             onClick={logout}
             style={{
@@ -967,6 +990,90 @@ const fetchEvents = async () => {
           }}
         >
           Pošalji
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{passwordModalOpen && (
+  <div
+    onClick={() => setPasswordModalOpen(false)}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 9999,
+    }}
+  >
+    <div
+      onClick={e => e.stopPropagation()}
+      style={{
+        background: '#fff',
+        padding: 20,
+        borderRadius: 10,
+        width: 350,
+      }}
+    >
+      <h3>Promena lozinke</h3>
+
+      <input
+        type="password"
+        placeholder="Stara lozinka"
+        value={passwordForm.oldPassword}
+        onChange={e =>
+          setPasswordForm({ ...passwordForm, oldPassword: e.target.value })
+        }
+        style={{ width: '100%', marginBottom: 10 }}
+      />
+
+      <input
+        type="password"
+        placeholder="Nova lozinka"
+        value={passwordForm.newPassword}
+        onChange={e =>
+          setPasswordForm({ ...passwordForm, newPassword: e.target.value })
+        }
+        style={{ width: '100%', marginBottom: 10 }}
+      />
+
+      <input
+        type="password"
+        placeholder="Ponovi novu lozinku"
+        value={passwordForm.confirmPassword}
+        onChange={e =>
+          setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })
+        }
+        style={{ width: '100%', marginBottom: 10 }}
+      />
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+        <button onClick={() => setPasswordModalOpen(false)}>
+          Zatvori
+        </button>
+
+        <button
+          onClick={async () => {
+            if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+              alert('Lozinke se ne poklapaju');
+              return;
+            }
+
+            await api.changePassword(passwordForm);
+            alert('Lozinka uspešno promenjena');
+            setPasswordModalOpen(false);
+
+            setPasswordForm({
+              oldPassword: '',
+              newPassword: '',
+              confirmPassword: '',
+            });
+          }}
+        >
+          Sačuvaj
         </button>
       </div>
     </div>
