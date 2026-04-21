@@ -404,7 +404,12 @@ export default function UserDashboard() {
             gap: 10,
         }}
       >
-        <div style={{ position: "relative", width: "100%", boxSizing: "border-box" }}>
+        <div  style={{
+    position: "relative",
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+  }}>
   <input
     type={showPassword.old ? "text" : "password"}
     placeholder="Stara lozinka"
@@ -417,8 +422,8 @@ export default function UserDashboard() {
     }
     style={{
       width: "100%",
-      padding: 10,
-      paddingRight: 40,
+      flex: 1,
+padding: 10,
       marginBottom: 15,
       borderRadius: 6,
       border: "1px solid #ccc",
@@ -434,7 +439,6 @@ export default function UserDashboard() {
     style={{
       position: "absolute",
       right: 10,
-      top: 10,
       cursor: "pointer",
       userSelect: "none",
     }}
@@ -443,7 +447,12 @@ export default function UserDashboard() {
   </span>
 </div>
 
-        <div style={{ position: "relative", width: "100%", boxSizing: "border-box" }}>
+        <div  style={{
+    position: "relative",
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+  }}>
   <input
     type={showPassword.new ? "text" : "password"}
     placeholder="Nova lozinka"
@@ -456,8 +465,8 @@ export default function UserDashboard() {
     }
     style={{
       width: "100%",
-      padding: 10,
-      paddingRight: 40,
+     flex: 1,
+padding: 10,
       marginBottom: 15,
       borderRadius: 6,
       border: "1px solid #ccc",
@@ -473,7 +482,6 @@ export default function UserDashboard() {
     style={{
       position: "absolute",
       right: 10,
-      top: 10,
       cursor: "pointer",
     }}
   >
@@ -481,7 +489,12 @@ export default function UserDashboard() {
   </span>
 </div>
 
-        <div style={{ position: "relative", width: "100%", boxSizing: "border-box", }}>
+        <div  style={{
+    position: "relative",
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+  }}>
   <input
     type={showPassword.confirm ? "text" : "password"}
     placeholder="Potvrdi novu lozinku"
@@ -494,8 +507,8 @@ export default function UserDashboard() {
     }
     style={{
       width: "100%",
+      flex: 1,
       padding: 10,
-      paddingRight: 40,
       marginBottom: 15,
       borderRadius: 6,
       border: "1px solid #ccc",
@@ -514,7 +527,6 @@ export default function UserDashboard() {
     style={{
       position: "absolute",
       right: 10,
-      top: 10,
       cursor: "pointer",
     }}
   >
