@@ -400,7 +400,7 @@ export default function UserDashboard() {
         style={{
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
+            gap: 10,
         }}
       >
         <div style={{ position: "relative", width: "100%", maxWidth: 400, boxSizing: "border-box" }}>
