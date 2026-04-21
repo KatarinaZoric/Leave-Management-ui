@@ -403,7 +403,7 @@ export default function UserDashboard() {
             gap: 10,
         }}
       >
-        <div style={{ position: "relative", width: "100%", maxWidth: 400, boxSizing: "border-box" }}>
+        <div style={{ position: "relative", width: "100%", boxSizing: "border-box" }}>
   <input
     type={showPassword.old ? "text" : "password"}
     placeholder="Stara lozinka"
@@ -442,7 +442,7 @@ export default function UserDashboard() {
   </span>
 </div>
 
-        <div style={{ position: "relative", width: "100%", maxWidth: 400, boxSizing: "border-box" }}>
+        <div style={{ position: "relative", width: "100%", boxSizing: "border-box" }}>
   <input
     type={showPassword.new ? "text" : "password"}
     placeholder="Nova lozinka"
@@ -480,7 +480,7 @@ export default function UserDashboard() {
   </span>
 </div>
 
-        <div style={{ position: "relative", width: "100%", maxWidth: 400, boxSizing: "border-box", }}>
+        <div style={{ position: "relative", width: "100%", boxSizing: "border-box", }}>
   <input
     type={showPassword.confirm ? "text" : "password"}
     placeholder="Potvrdi novu lozinku"
