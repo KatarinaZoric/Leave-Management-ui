@@ -73,6 +73,19 @@ export default function AdminDashboard() {
   const [rejectLeaveId, setRejectLeaveId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
+  // Zahtev za odustsvo
+
+  const [leaveModalOpen, setLeaveModalOpen] = useState(false);
+
+  const [leaveForm, setLeaveForm] = useState({
+  startDate: "",
+  endDate: "",
+  leaveTypeId: "",
+  note: ""
+  });
+
+  const [leaveTypes, setLeaveTypes] = useState([]);
+
   const [validUntilDate, setValidUntilDate] = useState<string>('');
 
   /* === MONTHLY VIEW STATE === */
@@ -182,6 +195,15 @@ const fetchEvents = async () => {
     fetchEvents();
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+  const loadTypes = async () => {
+    const data = await api.getLeaveTypes();
+    setLeaveTypes(data);
+  };
+
+  loadTypes();
+}, []);
 
   /* ================= ACTIONS ================= */
   const approve = async (id: string) => {
@@ -340,6 +362,24 @@ const fetchEvents = async () => {
           </button>
         </div>
       </div>
+
+      {(role === 'ADMIN' || role === 'MANAGER') && (
+  <div style={{ marginBottom: 15 }}>
+    <button
+      onClick={() => setLeaveModalOpen(true)}
+      style={{
+        background: '#0d5fb0',
+        color: '#fff',
+        padding: '10px 15px',
+        border: 'none',
+        borderRadius: 5,
+        cursor: 'pointer',
+      }}
+    >
+      Zatraži godišnji
+    </button>
+  </div>
+)}
 
       {/* ENTERPRISE GRID */}
       <div
@@ -827,6 +867,102 @@ const fetchEvents = async () => {
           </div>
         </div>
       )}
+
+      {leaveModalOpen && (
+  <div
+    onClick={() => setLeaveModalOpen(false)}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 9999,
+    }}
+  >
+    <div
+      onClick={e => e.stopPropagation()}
+      style={{
+        background: '#fff',
+        padding: 20,
+        borderRadius: 10,
+        width: 400,
+      }}
+    >
+      <h3>Zahtjev za godišnji</h3>
+
+      <input
+        type="date"
+        value={leaveForm.startDate}
+        onChange={e =>
+          setLeaveForm({ ...leaveForm, startDate: e.target.value })
+        }
+        style={{ width: '100%', marginBottom: 10 }}
+      />
+
+      <input
+        type="date"
+        value={leaveForm.endDate}
+        onChange={e =>
+          setLeaveForm({ ...leaveForm, endDate: e.target.value })
+        }
+        style={{ width: '100%', marginBottom: 10 }}
+      />
+
+      <select
+  value={leaveForm.leaveTypeId}
+  onChange={(e) =>
+    setLeaveForm({ ...leaveForm, leaveTypeId: e.target.value })
+  }
+  style={{ width: "100%", marginBottom: 10 }}
+>
+  <option value="">Izaberi tip odsustva</option>
+
+  {leaveTypes.map((t: any) => (
+    <option key={t.id} value={t.id}>
+      {t.name}
+    </option>
+  ))}
+</select>
+
+      <textarea
+        placeholder="Napomena"
+        value={leaveForm.note}
+        onChange={e =>
+          setLeaveForm({ ...leaveForm, note: e.target.value })
+        }
+        style={{ width: '100%', marginBottom: 10 }}
+      />
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+        <button onClick={() => setLeaveModalOpen(false)}>Zatvori</button>
+
+        <button
+          onClick={async () => {
+            await api.createLeaveEvent({
+              ...leaveForm,
+              leaveType: 'VACATION'
+            });
+
+            alert('Zahtev poslat!');
+            setLeaveModalOpen(false);
+            setLeaveForm({
+              startDate: "",
+              endDate: "",
+              leaveTypeId: "",
+              note: ""
+            });
+
+            fetchEvents();
+          }}
+        >
+          Pošalji
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }
