@@ -368,7 +368,7 @@ const fetchEvents = async () => {
     <button
   onClick={() => setLeaveModalOpen(true)}
   style={{
-    background: 'linear-gradient(135deg, #ff7a18, #ffb347)',
+    background: 'linear-gradient(135deg, #ff1818, #ffb347)',
     color: '#fff',
     padding: '12px 18px',
     border: 'none',
