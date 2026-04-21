@@ -363,7 +363,7 @@ const fetchEvents = async () => {
         </div>
       </div>
 
-      {(role === 'ADMIN' || role === 'MANAGER') && (
+      {role && (
   <div style={{ marginBottom: 15 }}>
     <button
       onClick={() => setLeaveModalOpen(true)}
