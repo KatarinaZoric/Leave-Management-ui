@@ -366,18 +366,27 @@ const fetchEvents = async () => {
       {role && (
   <div style={{ marginBottom: 15 }}>
     <button
-      onClick={() => setLeaveModalOpen(true)}
-      style={{
-        background: '#0d5fb0',
-        color: '#fff',
-        padding: '10px 15px',
-        border: 'none',
-        borderRadius: 5,
-        cursor: 'pointer',
-      }}
-    >
-      Zatraži godišnji
-    </button>
+  onClick={() => setLeaveModalOpen(true)}
+  style={{
+    background: 'linear-gradient(135deg, #ff7a18, #ffb347)',
+    color: '#fff',
+    padding: '12px 18px',
+    border: 'none',
+    borderRadius: 10,
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+    transition: 'all 0.2s ease',
+  }}
+  onMouseOver={(e) => {
+    (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)';
+  }}
+  onMouseOut={(e) => {
+    (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0px)';
+  }}
+>
+  Zatraži godišnji
+</button>
   </div>
 )}
 
@@ -890,7 +899,7 @@ const fetchEvents = async () => {
         width: 400,
       }}
     >
-      <h3>Zahtjev za godišnji</h3>
+      <h3>Zahtev za godišnji</h3>
 
       <input
         type="date"
