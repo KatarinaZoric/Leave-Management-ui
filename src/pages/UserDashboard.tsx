@@ -391,6 +391,7 @@ export default function UserDashboard() {
         width: "100%",
         maxWidth: 450,
         boxSizing: "border-box",
+        overflow: "hidden",
       }}
     >
       <h3 style={{ textAlign: "center", marginBottom: 20 }}>Promena lozinke</h3>
