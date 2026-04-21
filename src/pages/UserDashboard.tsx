@@ -403,7 +403,7 @@ export default function UserDashboard() {
           alignItems: "center",
         }}
       >
-        <div style={{ position: "relative", width: "100%", maxWidth: 400 }}>
+        <div style={{ position: "relative", width: "100%", maxWidth: 400, boxSizing: "border-box" }}>
   <input
     type={showPassword.old ? "text" : "password"}
     placeholder="Stara lozinka"
@@ -421,6 +421,7 @@ export default function UserDashboard() {
       marginBottom: 15,
       borderRadius: 6,
       border: "1px solid #ccc",
+      boxSizing: "border-box",
     }}
     required
   />
@@ -441,7 +442,7 @@ export default function UserDashboard() {
   </span>
 </div>
 
-        <div style={{ position: "relative", width: "100%", maxWidth: 400 }}>
+        <div style={{ position: "relative", width: "100%", maxWidth: 400, boxSizing: "border-box" }}>
   <input
     type={showPassword.new ? "text" : "password"}
     placeholder="Nova lozinka"
@@ -459,6 +460,7 @@ export default function UserDashboard() {
       marginBottom: 15,
       borderRadius: 6,
       border: "1px solid #ccc",
+      boxSizing: "border-box",
     }}
     required
   />
@@ -478,7 +480,7 @@ export default function UserDashboard() {
   </span>
 </div>
 
-        <div style={{ position: "relative", width: "100%", maxWidth: 400 }}>
+        <div style={{ position: "relative", width: "100%", maxWidth: 400, boxSizing: "border-box", }}>
   <input
     type={showPassword.confirm ? "text" : "password"}
     placeholder="Potvrdi novu lozinku"
@@ -496,6 +498,7 @@ export default function UserDashboard() {
       marginBottom: 15,
       borderRadius: 6,
       border: "1px solid #ccc",
+      boxSizing: "border-box",
     }}
     required
   />
