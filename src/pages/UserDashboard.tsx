@@ -49,6 +49,7 @@ export default function UserDashboard() {
     note: "",
   });
 
+
   const [balances, setBalances] = useState<LeaveBalance[]>([]);
 
   // ================= PASSWORD MODAL =================
@@ -59,6 +60,12 @@ export default function UserDashboard() {
     confirmPassword: "",
   });
   const [passwordMessage, setPasswordMessage] = useState("");
+
+  const [showPassword, setShowPassword] = useState({
+  old: false,
+  new: false,
+  confirm: false,
+});
 
   // 🎨 COLORS
   const colors = {
@@ -396,62 +403,120 @@ export default function UserDashboard() {
           alignItems: "center",
         }}
       >
-        <input
-          type="password"
-          placeholder="Stara lozinka"
-          value={passwordForm.oldPassword}
-          onChange={(e) =>
-            setPasswordForm((prev) => ({ ...prev, oldPassword: e.target.value }))
-          }
-          style={{
-            width: "100%",
-            maxWidth: 400,
-            padding: 10,
-            marginBottom: 15,
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            boxSizing: "border-box",
-          }}
-          required
-        />
+        <div style={{ position: "relative", width: "100%", maxWidth: 400 }}>
+  <input
+    type={showPassword.old ? "text" : "password"}
+    placeholder="Stara lozinka"
+    value={passwordForm.oldPassword}
+    onChange={(e) =>
+      setPasswordForm((prev) => ({
+        ...prev,
+        oldPassword: e.target.value,
+      }))
+    }
+    style={{
+      width: "100%",
+      padding: 10,
+      paddingRight: 40,
+      marginBottom: 15,
+      borderRadius: 6,
+      border: "1px solid #ccc",
+    }}
+    required
+  />
 
-        <input
-          type="password"
-          placeholder="Nova lozinka"
-          value={passwordForm.newPassword}
-          onChange={(e) =>
-            setPasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))
-          }
-          style={{
-            width: "100%",
-            maxWidth: 400,
-            padding: 10,
-            marginBottom: 15,
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            boxSizing: "border-box",
-          }}
-          required
-        />
+  <span
+    onClick={() =>
+      setShowPassword((p) => ({ ...p, old: !p.old }))
+    }
+    style={{
+      position: "absolute",
+      right: 10,
+      top: 10,
+      cursor: "pointer",
+      userSelect: "none",
+    }}
+  >
+    {showPassword.old ? "🙈" : "👁️"}
+  </span>
+</div>
 
-        <input
-          type="password"
-          placeholder="Potvrdi novu lozinku"
-          value={passwordForm.confirmPassword}
-          onChange={(e) =>
-            setPasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))
-          }
-          style={{
-            width: "100%",
-            maxWidth: 400,
-            padding: 10,
-            marginBottom: 15,
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            boxSizing: "border-box",
-          }}
-          required
-        />
+        <div style={{ position: "relative", width: "100%", maxWidth: 400 }}>
+  <input
+    type={showPassword.new ? "text" : "password"}
+    placeholder="Nova lozinka"
+    value={passwordForm.newPassword}
+    onChange={(e) =>
+      setPasswordForm((prev) => ({
+        ...prev,
+        newPassword: e.target.value,
+      }))
+    }
+    style={{
+      width: "100%",
+      padding: 10,
+      paddingRight: 40,
+      marginBottom: 15,
+      borderRadius: 6,
+      border: "1px solid #ccc",
+    }}
+    required
+  />
+
+  <span
+    onClick={() =>
+      setShowPassword((p) => ({ ...p, new: !p.new }))
+    }
+    style={{
+      position: "absolute",
+      right: 10,
+      top: 10,
+      cursor: "pointer",
+    }}
+  >
+    {showPassword.new ? "🙈" : "👁️"}
+  </span>
+</div>
+
+        <div style={{ position: "relative", width: "100%", maxWidth: 400 }}>
+  <input
+    type={showPassword.confirm ? "text" : "password"}
+    placeholder="Potvrdi novu lozinku"
+    value={passwordForm.confirmPassword}
+    onChange={(e) =>
+      setPasswordForm((prev) => ({
+        ...prev,
+        confirmPassword: e.target.value,
+      }))
+    }
+    style={{
+      width: "100%",
+      padding: 10,
+      paddingRight: 40,
+      marginBottom: 15,
+      borderRadius: 6,
+      border: "1px solid #ccc",
+    }}
+    required
+  />
+
+  <span
+    onClick={() =>
+      setShowPassword((p) => ({
+        ...p,
+        confirm: !p.confirm,
+      }))
+    }
+    style={{
+      position: "absolute",
+      right: 10,
+      top: 10,
+      cursor: "pointer",
+    }}
+  >
+    {showPassword.confirm ? "🙈" : "👁️"}
+  </span>
+</div>
 
         {passwordMessage && (
           <p style={{ color: "red", marginBottom: 10, textAlign: "center" }}>
