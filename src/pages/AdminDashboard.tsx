@@ -266,21 +266,6 @@ const fetchEvents = async () => {
 
 const absenceMap = new Map<string, LeaveEventResponse>();
 
-const isSameDayOrBetween = (
-  start: Date,
-  end: Date,
-  day: Date
-) => {
-  const s = new Date(start);
-  const e = new Date(end);
-  const d = new Date(day);
-
-  s.setHours(0, 0, 0, 0);
-  e.setHours(0, 0, 0, 0);
-  d.setHours(0, 0, 0, 0);
-
-  return s <= d && d <= e;
-};
 
 events
   .filter(e => e.status !== 'CANCELLED')
@@ -730,21 +715,6 @@ events
                 }
 
                 /* === PROVERA DATUMA === */
-                const isSameDayOrBetween = (
-                  start: Date,
-                  end: Date,
-                  day: Date
-                ) => {
-                  const s = new Date(start);
-                  const e = new Date(end);
-                  const d = new Date(day);
-
-                  s.setHours(0, 0, 0, 0);
-                  e.setHours(0, 0, 0, 0);
-                  d.setHours(0, 0, 0, 0);
-
-                  return s <= d && d <= e;
-                };
 
                 /* === PRONALAZI ODSUSTVO === */
 
