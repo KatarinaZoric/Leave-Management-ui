@@ -27,7 +27,7 @@ type User = {
 
 type LeaveEventResponse = {
   id: string;
-  user: { name: string; surname: string; email: string };
+  user: { id: string, name: string; surname: string; email: string };
   leaveType: { name: string; color?: string };
   startDate: string;
   endDate: string;
@@ -261,6 +261,44 @@ const fetchEvents = async () => {
   };
 
   const pendingEvents = events.filter(e => e.status === 'PENDING');
+
+  /* ================= MONTHLY MAP ================= */
+
+const absenceMap = new Map<string, LeaveEventResponse>();
+
+const isSameDayOrBetween = (
+  start: Date,
+  end: Date,
+  day: Date
+) => {
+  const s = new Date(start);
+  const e = new Date(end);
+  const d = new Date(day);
+
+  s.setHours(0, 0, 0, 0);
+  e.setHours(0, 0, 0, 0);
+  d.setHours(0, 0, 0, 0);
+
+  return s <= d && d <= e;
+};
+
+events
+  .filter(e => e.status !== 'CANCELLED')
+  .forEach(e => {
+    const start = new Date(e.startDate);
+    const end = new Date(e.endDate);
+
+    let current = new Date(start);
+
+    while (current <= end) {
+      const key =
+        `${e.user.id}_${current.getFullYear()}_${current.getMonth()}_${current.getDate()}`;
+
+      absenceMap.set(key, e);
+
+      current.setDate(current.getDate() + 1);
+    }
+  });
 
   /* ================= CALENDAR STYLES ================= */
   const eventStyleGetter = (event: CalendarEvent) => ({
@@ -709,18 +747,11 @@ const fetchEvents = async () => {
                 };
 
                 /* === PRONALAZI ODSUSTVO === */
-                const absenceEvent = events
-  .filter(e => e.status !== 'CANCELLED')
-  .find(
-                  e =>
-                    e.user.name === user.name &&
-                    e.user.surname === user.surname &&
-                    isSameDayOrBetween(
-                      new Date(e.startDate),
-                      new Date(e.endDate),
-                      dayDate
-                    )
-                );
+
+                const key =
+  `${user.id}_${dayDate.getFullYear()}_${dayDate.getMonth()}_${dayDate.getDate()}`;
+
+const absenceEvent = absenceMap.get(key);
 
                 const leaveType =
                   absenceEvent?.leaveType?.name?.toLowerCase();
@@ -739,19 +770,38 @@ const fetchEvents = async () => {
                   }
                 }
 
-                return (
-                  <td
-                    key={dayIndex}
-                    title={absenceEvent?.leaveType?.name || ''}
-                    style={{
-                      border: '1px solid #ccc',
-                      width: 25,
-                      height: 25,
-                      backgroundColor,
-                      cursor: absenceEvent ? 'pointer' : 'default',
-                    }}
-                  />
-                );
+                /* === OZNAKA (GO / BO / SL) === */
+let label = '';
+
+if (leaveType) {
+  if (leaveType.includes('bol')) {
+    label = 'BO';
+  } else if (leaveType.includes('godi')) {
+    label = 'GO';
+  } else if (leaveType.includes('slobod')) {
+    label = 'SL';
+  }
+}
+
+        return (
+  <td
+    key={dayIndex}
+    title={absenceEvent?.leaveType?.name || ''}
+    style={{
+      border: '1px solid #ccc',
+      width: 28,
+      height: 28,
+      backgroundColor,
+      cursor: absenceEvent ? 'pointer' : 'default',
+      textAlign: 'center',
+      fontSize: 11,
+      fontWeight: 'bold',
+      color: '#fff',
+    }}
+  >
+    {label}
+  </td>
+);
               }
             )}
           </tr>
