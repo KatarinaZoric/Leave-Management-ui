@@ -743,14 +743,30 @@ const absenceEvent = absenceMap.get(key);
                 /* === OZNAKA (GO / BO / SL) === */
 let label = '';
 
+let textColor = '#000';
+
+/* ===== ODSUSTVO ===== */
 if (leaveType) {
   if (leaveType.includes('bol')) {
     label = 'BO';
+    backgroundColor = '#e91414';
+    textColor = '#fff';
   } else if (leaveType.includes('godi')) {
     label = 'GO';
+    backgroundColor = '#3b78d2';
+    textColor = '#fff';
   } else if (leaveType.includes('slobod')) {
     label = 'SL';
+    backgroundColor = '#7b5bd6';
+    textColor = '#fff';
   }
+}
+
+/* ===== RADI → 8 SATI ===== */
+if (!leaveType) {
+  label = '8';
+  backgroundColor = '#ffffff';
+  textColor = '#000';
 }
 
         return (
@@ -766,7 +782,7 @@ if (leaveType) {
       textAlign: 'center',
       fontSize: 11,
       fontWeight: 'bold',
-      color: '#fff',
+      color: textColor,
     }}
   >
     {label}
