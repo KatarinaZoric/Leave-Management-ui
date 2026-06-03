@@ -266,44 +266,6 @@ const fetchEvents = async () => {
   e => e.status === 'APPROVED'
 );
 
-<div
-  style={{
-    background: '#fff',
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 20,
-  }}
->
-  <h3>Odobrena odsustva</h3>
-
-  {approvedEvents
-    .sort(
-      (a, b) =>
-        new Date(a.startDate).getTime() -
-        new Date(b.startDate).getTime()
-    )
-    .map(e => (
-      <div
-        key={e.id}
-        style={{
-          padding: 10,
-          borderBottom: '1px solid #ddd',
-        }}
-      >
-        <strong>
-          {e.user.name} {e.user.surname}
-        </strong>
-
-        <div>{e.leaveType.name}</div>
-
-        <div>
-          {new Date(e.startDate).toLocaleDateString()}
-          {' - '}
-          {new Date(e.endDate).toLocaleDateString()}
-        </div>
-      </div>
-    ))}
-</div>
   /* ================= MONTHLY MAP ================= */
 
 const absenceMap = new Map<string, LeaveEventResponse>();
@@ -550,6 +512,32 @@ events
             </div>
           ))}
         </div>
+
+        {/* APPROVED */}
+<div style={{
+  background: '#fff',
+  padding: 15,
+  borderRadius: 10,
+  marginTop: 10
+}}>
+  <h3>Odobrena odsustva</h3>
+
+  {approvedEvents
+    .sort((a, b) =>
+      new Date(a.startDate).getTime() -
+      new Date(b.startDate).getTime()
+    )
+    .map(e => (
+      <div key={e.id} style={{ padding: 10, borderBottom: '1px solid #eee' }}>
+        <strong>{e.user.name} {e.user.surname}</strong>
+        <div>{e.leaveType.name}</div>
+        <div>
+          {new Date(e.startDate).toLocaleDateString()} →{' '}
+          {new Date(e.endDate).toLocaleDateString()}
+        </div>
+      </div>
+    ))}
+</div>
 
        {/* USERS LIST */}
 <div
