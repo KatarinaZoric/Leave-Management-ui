@@ -266,10 +266,6 @@ const fetchEvents = async () => {
   e => e.status === 'APPROVED'
 );
 
-const cancelledEvents = events.filter(
-  e => e.status === 'CANCELLED'
-);
-
 <div
   style={{
     background: '#fff',
