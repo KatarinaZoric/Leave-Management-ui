@@ -262,6 +262,52 @@ const fetchEvents = async () => {
 
   const pendingEvents = events.filter(e => e.status === 'PENDING');
 
+  const approvedEvents = events.filter(
+  e => e.status === 'APPROVED'
+);
+
+const cancelledEvents = events.filter(
+  e => e.status === 'CANCELLED'
+);
+
+<div
+  style={{
+    background: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 20,
+  }}
+>
+  <h3>Odobrena odsustva</h3>
+
+  {approvedEvents
+    .sort(
+      (a, b) =>
+        new Date(a.startDate).getTime() -
+        new Date(b.startDate).getTime()
+    )
+    .map(e => (
+      <div
+        key={e.id}
+        style={{
+          padding: 10,
+          borderBottom: '1px solid #ddd',
+        }}
+      >
+        <strong>
+          {e.user.name} {e.user.surname}
+        </strong>
+
+        <div>{e.leaveType.name}</div>
+
+        <div>
+          {new Date(e.startDate).toLocaleDateString()}
+          {' - '}
+          {new Date(e.endDate).toLocaleDateString()}
+        </div>
+      </div>
+    ))}
+</div>
   /* ================= MONTHLY MAP ================= */
 
 const absenceMap = new Map<string, LeaveEventResponse>();
@@ -687,6 +733,7 @@ events
             <td style={{ border: '1px solid #ccc', padding: 5 }}>
               {user.name} {user.surname}
             </td>
+
 
             {Array.from(
               { length: daysInMonth(selectedMonth, currentYear) },
