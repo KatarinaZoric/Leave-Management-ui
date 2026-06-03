@@ -514,24 +514,54 @@ events
         </div>
 
         {/* APPROVED */}
-<div style={{
-  background: '#fff',
-  padding: 15,
-  borderRadius: 10,
-  marginTop: 10
-}}>
-  <h3>Odobrena odsustva</h3>
+<div
+  style={{
+    background: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 10,
+    maxHeight: 220,
+    overflowY: 'auto',
+    border: '1px solid #d0d7e2'
+  }}
+>
+  <h3 style={{ marginTop: 0, marginBottom: 10 }}>
+    Odobrena odsustva
+  </h3>
+
+  {approvedEvents.length === 0 && (
+    <p style={{ fontSize: 13, color: '#888' }}>
+      Nema odobrenih odsustava
+    </p>
+  )}
 
   {approvedEvents
-    .sort((a, b) =>
-      new Date(a.startDate).getTime() -
-      new Date(b.startDate).getTime()
+    .sort(
+      (a, b) =>
+        new Date(a.startDate).getTime() -
+        new Date(b.startDate).getTime()
     )
     .map(e => (
-      <div key={e.id} style={{ padding: 10, borderBottom: '1px solid #eee' }}>
-        <strong>{e.user.name} {e.user.surname}</strong>
-        <div>{e.leaveType.name}</div>
-        <div>
+      <div
+        key={e.id}
+        style={{
+          padding: 10,
+          marginBottom: 8,
+          borderRadius: 8,
+          background: '#f6f9ff',
+          borderLeft: '5px solid #3b78d2',
+          fontSize: 13
+        }}
+      >
+        <div style={{ fontWeight: 600 }}>
+          {e.user.name} {e.user.surname}
+        </div>
+
+        <div style={{ color: '#3b78d2', fontWeight: 500 }}>
+          {e.leaveType.name}
+        </div>
+
+        <div style={{ fontSize: 12, color: '#555' }}>
           {new Date(e.startDate).toLocaleDateString()} →{' '}
           {new Date(e.endDate).toLocaleDateString()}
         </div>
