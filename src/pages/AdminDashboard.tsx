@@ -229,6 +229,19 @@ const fetchEvents = async () => {
   await fetchUsers();
 };
 
+const cancelLeave = async (id: string) => {
+  if (!confirm("Da li želiš da otkažeš odsustvo?")) return;
+
+  try {
+    await api.cancelLeave(id);
+    await fetchEvents();
+    await fetchUsers();
+  } catch (err) {
+    console.error(err);
+    alert("Greška pri otkazivanju odsustva");
+  }
+};
+
   const openRejectModal = (id: string) => {
     setRejectLeaveId(id);
     setRejectModalOpen(true);
@@ -516,6 +529,12 @@ events
                 <>
                   <button onClick={() => approve(e.id)}>Odobri</button>
                   <button onClick={() => openRejectModal(e.id)}>Odbij</button>
+                  <button
+      onClick={() => cancelLeave(e.id)}
+      style={{ marginLeft: 5, backgroundColor: 'orange' }}
+    >
+      Otkaži
+    </button>
                 </>
               )}
             </div>
