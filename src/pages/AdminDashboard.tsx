@@ -200,6 +200,15 @@ const fetchEvents = async () => {
   }, [balanceYear]);
 
   useEffect(() => {
+  if (!balanceUserId) return;
+
+  const user = users.find(u => u.id === balanceUserId);
+  if (!user) return;
+
+  setNewBalance(user.remainingDays?.[balanceYear] ?? 0);
+}, [balanceYear, balanceUserId, users]);
+
+  useEffect(() => {
     fetchEvents();
     fetchUsers();
   }, []);
@@ -236,10 +245,10 @@ const fetchEvents = async () => {
   };
 
   const addBalance = async () => {
-    if (!balanceUserId || newBalance <= 0) {
-      alert('Unesite broj dana za balans');
-      return;
-    }
+    if (!balanceUserId || newBalance < 0) {
+    alert('Unesite ispravan broj dana');
+    return;
+  }
 
     try {
       await api.updateUserBalance(balanceUserId, newBalance, balanceYear);
@@ -658,17 +667,24 @@ events
   <p>Nema podataka o preostalim danima</p>
 )}
 
-          <div style={{ marginTop: 10 }}>
-            <button
-              onClick={() => {
-                setBalanceUserId(user.id);
-                setBalanceModalOpen(true);
-              }}
-            >
-              Dodaj balans
-            </button>
+          <button
+  onClick={() => {
+    setBalanceUserId(user.id);
+
+    const currentYear = new Date().getFullYear();
+
+    const existingBalance =
+      user.remainingDays?.[currentYear] ?? 0;
+
+    setBalanceYear(currentYear);
+    setNewBalance(existingBalance);
+
+    setBalanceModalOpen(true);
+  }}
+>
+  Izmeni balans
+</button>
           </div>
-        </div>
       ))}
   </div>
 </div>
@@ -922,7 +938,10 @@ if (!leaveType) {
             <input
               type="number"
               value={newBalance}
-              onChange={e => setNewBalance(parseInt(e.target.value))}
+              onChange={e => {
+              const value = e.target.value;
+              setNewBalance(value === '' ? 0 : Number(value));
+              }}
               placeholder="Broj dana"
               style={{ marginBottom: 10, width: '100%', padding: 8, borderRadius: 6, border: '1px solid #ccc' }}
             />
